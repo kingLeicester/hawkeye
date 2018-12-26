@@ -24,6 +24,38 @@ from scipy import signal
 import deblink
 import nystrom_saccade_detector
 
+class GazeReader:
+
+	def __init__(self, subject_number):
+		self.subject_number = subject_number
+
+	def read_gaze_data(self):
+		# Read in gaze data 
+		gaze_file = "/study/midusref/DATA/Eyetracking/david_analysis/raw_data/MIDUSref_startle_order*_FINAL_VERSION-%s-%s.gazedata"%(self.subject_number, self.subject_number)
+		gaze_file = glob.glob(gaze_file)
+		gaze_file = gaze_file[0]
+		gaze_df = pd.read_csv(gaze_file, sep='\t')
+
+		return gaze_df
+
+class EPrimeReader:
+	
+	def __init__(self, subject_number):
+		self.subject_number = subject_number
+
+	def read_eprime_data(self):
+	# Convert Eprime file in to tsv
+	eprime_input = "/study/midusref/DATA/Eyetracking/david_analysis/raw_data/MIDUSref_startle_order*_FINAL_VERSION-%s-%s.txt"%(self.subject_number, self.subject_number)
+	eprime_input = glob.glob(eprime_input)
+	eprime_input = eprime_input[0]
+
+	os.makedirs("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/%s"%(self.subject_number), exist_ok=True)
+	os.system("eprime2tabfile %s > /study/midusref/DATA/Eyetracking/david_analysis/data_processed/%s/MIDUSref_FINAL_VERSION-%s-%s.tsv"%(eprime_input, self.subject_number, self.subject_number, self.subject_number))
+
+	# Read in Eprime data
+	e_prime_df = pd.read_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/%s/MIDUSref_FINAL_VERSION-%s-%s.tsv"%(self.subject_number, self.subject_number, self.subject_number), sep='\t')
+	
+	return e_prime_df
 
 class GazeDenoisor:
 
@@ -298,7 +330,7 @@ class SaccadeDetector:
 
 		return (final_df)	
 
-class GazeComplier:
+class GazeCompiler:
 	
 	def __init__(self):
 
