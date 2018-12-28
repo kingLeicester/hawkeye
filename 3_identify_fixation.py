@@ -151,7 +151,7 @@ number_fixations_list = []
 #for image in postDenoise_imageList:
 
 # Work with data relavant to single IAPS image at a time
-image = postDenoise_imageList[33]
+image = postDenoise_imageList[37]
 print (image)
 single_image_df = data_denoised.loc[data_denoised['image'] == image]
 
@@ -208,12 +208,11 @@ candidate_t = (saccade_df[saccade_df['saccade_candidate'] == True]).index
 #--------------------Detect Fixations--------------------
 
 # Get indices that are not saccades (fixations)
-candidate_t = (saccade_df[saccade_df['saccade_candidate'] == False]).index
-
+#candidate_t = (saccade_df[saccade_df['saccade_candidate'] == False]).index
 
 print (candidate_t)
-
 exit()
+
 # 이게 틀렸음!
 # Create dataFrame of all fixations
 fixation_df = saccade_df.loc[saccade_df['saccade_candidate'] == False]
