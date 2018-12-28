@@ -45,21 +45,22 @@ class EPrimeReader:
 
 	def read_eprime_data(self):
 	# Convert Eprime file in to tsv
-	eprime_input = "/study/midusref/DATA/Eyetracking/david_analysis/raw_data/MIDUSref_startle_order*_FINAL_VERSION-%s-%s.txt"%(self.subject_number, self.subject_number)
-	eprime_input = glob.glob(eprime_input)
-	eprime_input = eprime_input[0]
+		eprime_input = "/study/midusref/DATA/Eyetracking/david_analysis/raw_data/MIDUSref_startle_order*_FINAL_VERSION-%s-%s.txt"%(self.subject_number, self.subject_number)
+		eprime_input = glob.glob(eprime_input)
+		eprime_input = eprime_input[0]
 
-	os.makedirs("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/%s"%(self.subject_number), exist_ok=True)
-	os.system("eprime2tabfile %s > /study/midusref/DATA/Eyetracking/david_analysis/data_processed/%s/MIDUSref_FINAL_VERSION-%s-%s.tsv"%(eprime_input, self.subject_number, self.subject_number, self.subject_number))
+		os.makedirs("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/%s"%(self.subject_number), exist_ok=True)
+		os.system("eprime2tabfile %s > /study/midusref/DATA/Eyetracking/david_analysis/data_processed/%s/MIDUSref_FINAL_VERSION-%s-%s.tsv"%(eprime_input, self.subject_number, self.subject_number, self.subject_number))
 
-	# Read in Eprime data
-	e_prime_df = pd.read_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/%s/MIDUSref_FINAL_VERSION-%s-%s.tsv"%(self.subject_number, self.subject_number, self.subject_number), sep='\t')
-	
-	return e_prime_df
+		# Read in Eprime data
+		e_prime_df = pd.read_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/%s/MIDUSref_FINAL_VERSION-%s-%s.tsv"%(self.subject_number, self.subject_number, self.subject_number), sep='\t')
+		
+		return e_prime_df
 
 class GazeDenoisor:
 
 	def __init__(self):
+		pass
 
 	def compute_sampling_rate(self, data_frame):
 		data_by_trial = list(data_frame.groupby('image'))
@@ -101,7 +102,7 @@ class GazeDenoisor:
 		final_df = data_frame
 		return (final_df)
 
-	def denoise_invalid(data_frame):
+	def denoise_invalid(self, data_frame):
 		##### Filter data by validity
 		# Keep trials with AT LEAST one good (valid) eye gaze 
 		# Use anything from 0 , 1 , or 2 in at least one eye
@@ -119,9 +120,10 @@ class GazeDenoisor:
 class AOIReader:
 
 	def __init__(self):
+		pass
 
-	def read_in_AOI(data_frame):
-		imageList = self.data_frame['image'].unique()
+	def read_in_AOI(self, data_frame):
+		imageList = data_frame['image'].unique()
 		IAPSlist = []
 		coordinateList = []
 		objectNumList = []
@@ -146,9 +148,9 @@ class AOIReader:
 							coordinateList.append(objectCoordinate)
 							objectNumList.append(objectNum)
 
-				df1 = pd.data_frame(IAPSlist, columns=['image'])
-				df2 = pd.data_frame(coordinateList, columns=['coordinate'])
-				df3 = pd.data_frame(objectNumList, columns=['objectNumber'])
+				df1 = pd.DataFrame(IAPSlist, columns=['image'])
+				df2 = pd.DataFrame(coordinateList, columns=['coordinate'])
+				df3 = pd.DataFrame(objectNumList, columns=['objectNumber'])
 				df4 = pd.concat([df1, df2], axis=1)
 				df5 = pd.concat([df4, df3], axis=1)
 
@@ -170,21 +172,22 @@ class AOIReader:
 class AOIScalar:
 
 	def __init__(self):
+		pass
 
-	def scale_rectangle_aoi(data_frame):
+	def scale_rectangle_aoi(self, data_frame):
 
 		rectangle_coordinate_list = []
 
-		for index, row in rectangle_aoi_df.iterrows():
+		for index, row in data_frame.iterrows():
 			a = (row['coordinate']).split(",")
 			rectangle_coordinates = a[1:]
 			#df5.loc[index,'coordinate'] = rectangle_coordinates
 			rectangle_coordinate_list.append(rectangle_coordinates)
 
-		rectangle_coordinate_df = pd.data_frame(rectangle_coordinate_list, columns=['Xmin','Ymax','Xmax','Ymin'])
+		rectangle_coordinate_df = pd.DataFrame(rectangle_coordinate_list, columns=['Xmin','Ymax','Xmax','Ymin'])
 
 		# Merge new coordinate information with AOI data_frame
-		rectangle_aoi_data = pd.concat([rectangle_aoi_df, rectangle_coordinate_df], axis=1)
+		rectangle_aoi_data = pd.concat([data_frame, rectangle_coordinate_df], axis=1)
 		#df5["rectangle_coordinates"] = pd.Series(rectangle_coordinate_list, index=df5.index)
 
 		# Cast Float to coordinate values
@@ -209,19 +212,19 @@ class AOIScalar:
 
 		return (final_df)
 
-	def scale_ellipse_aoi(data_frame):
+	def scale_ellipse_aoi(self, data_frame):
 		ellipse_coordinate_list = []
 
-		for index, row in ellipse_aoi_df.iterrows():
+		for index, row in data_frame.iterrows():
 			a = (row['coordinate']).split(",")
 			ellipse_coordinates = a[1:]
 			#df5.loc[index,'coordinate'] = ellipse_coordinates
 			ellipse_coordinate_list.append(ellipse_coordinates)
 
-		ellipse_coordinate_df = pd.data_frame(ellipse_coordinate_list, columns=['Xcenter','Ycenter','Height','Width'])
+		ellipse_coordinate_df = pd.DataFrame(ellipse_coordinate_list, columns=['Xcenter','Ycenter','Height','Width'])
 
 		# Merge new coordinate information with AOI data_frame
-		ellipse_aoi_data = pd.concat([ellipse_aoi_df, ellipse_coordinate_df], axis=1)
+		ellipse_aoi_data = pd.concat([data_frame, ellipse_coordinate_df], axis=1)
 		#df5["ellipse_coordinates"] = pd.Series(ellipse_coordinate_list, index=df5.index)
 
 
@@ -246,10 +249,10 @@ class SignalDenoisor:
 		self.max_blink_second = max_blink_second
 		self.sampling_rate = sampling_rate
 
-	def meidan_filter(data_frame):
+	def meidan_filter(self, data_frame):
 		# Transform 'CursorX' and 'CursorY' into 2D arrays
-		x = self.data_frame['CursorX'].astype(float).values
-		y = self.data_frame['CursorY'].astype(float).values
+		x = data_frame['CursorX'].astype(float).values
+		y = data_frame['CursorY'].astype(float).values
 
 		# Apply 1/20s width median filter (Instantiated in the beggining)
 		# MEDIAN_WIDTH_MAX = 1.0 / 20
@@ -262,14 +265,14 @@ class SignalDenoisor:
 
 		x_filtered = signal.medfilt(x, filter_width)
 		y_filtered = signal.medfilt(y, filter_width)
-		self.data_frame['x_filtered'] = x_filtered
-		self.data_frame['y_filtered'] = y_filtered
+		data_frame['x_filtered'] = x_filtered
+		data_frame['y_filtered'] = y_filtered
 
 		final_df = data_frame
 
 		return (final_df)
 
-	def remove_blinks(data_frame, median_with_max, max_blink_second, sampling_rate):
+	def remove_blinks(self, data_frame):
 		#MAX_BLINK_SEC = 0.4
 
 		max_blink_samples = int(np.round(self.max_blink_second * self.sampling_rate))
@@ -319,7 +322,7 @@ class SaccadeDetector:
 	def __init__(self, sampling_rate):
 		self.sampling_rate = sampling_rate
 
-	def detect_saccade(data_frame):
+	def detect_saccade(self, data_frame):
 		gaze_array = data_frame[['x_deblinked', 'y_deblinked']].fillna(0).values
 		saccade_detector = nystrom_saccade_detector.AdaptiveDetector(gaze_array, self.sampling_rate, threshold_sd_scale=3)
 		saccade_detector._compute_saccades()
@@ -333,8 +336,9 @@ class SaccadeDetector:
 class GazeCompiler:
 	
 	def __init__(self):
+		pass
 
-	def rectangle_clean_gaze_and_coordinate(data_frame):
+	def rectangle_clean_gaze_and_coordinate(self, data_frame):
 		# Clean X gaze
 		data_frame['x_deblinked'] = data_frame['x_deblinked'].astype(float)
 		data_frame['Xmax'] = data_frame['Xmax'].astype(float)
@@ -350,12 +354,12 @@ class GazeCompiler:
 		final_df = data_frame
 		return (final_df)
 
-	def rectangle_compute_gaze_in_AOI(data_frame):
+	def rectangle_compute_gaze_in_AOI(self, data_frame):
 		final_df = data_frame[(data_frame['x_deblinked'] > data_frame['Xmin']) & (data_frame['x_deblinked'] < data_frame['Xmax']) & (data_frame['y_deblinked'] > data_frame['Ymin']) & (data_frame['y_deblinked'] < data_frame['Ymax'])]
 		
 		return (final_df)
 
-	def ellipse_clean_gaze_and_coordinate(data_frame):
+	def ellipse_clean_gaze_and_coordinate(self, data_frame):
 		# Clean X gaze
 		data_frame['x_deblinked'] = data_frame['x_deblinked'].astype(float)
 		data_frame['Xcenter'] = data_frame['Xcenter'].astype(float)
@@ -371,7 +375,7 @@ class GazeCompiler:
 		final_df = data_frame
 		return (final_df)
 
-	def ellipse_compute_gaze_in_AOI(data_frame):
+	def ellipse_compute_gaze_in_AOI(self, data_frame):
 		ellipse_point_list = []
 		for index, row in data_frame.iterrows():
 			Xcoordinate = row['x_deblinked']
