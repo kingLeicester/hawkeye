@@ -21,17 +21,17 @@ import glob
 from scipy import signal
 
 # These are Nate Vack's Work. Should be included in the package with Nate Vack's ownership
-import deblink
-import nystrom_saccade_detector
+#import deblink
+#import nystrom_saccade_detector
 
 class GazeReader:
 
 	def __init__(self, subject_number):
 		self.subject_number = subject_number
 
-	def read_gaze_data(self):
+	def read_gaze_data(self, gaze_file_dir="/study/midusref/DATA/Eyetracking/david_analysis/raw_data/"):
 		# Read in gaze data 
-		gaze_file = "/study/midusref/DATA/Eyetracking/david_analysis/raw_data/MIDUSref_startle_order*_FINAL_VERSION-%s-%s.gazedata"%(self.subject_number, self.subject_number)
+		gaze_file = f'{gaze_file_dir}MIDUSref_startle_order*_FINAL_VERSION-{self.subject_number}-{self.subject_number}.gazedata'
 		gaze_file = glob.glob(gaze_file)
 		gaze_file = gaze_file[0]
 		gaze_df = pd.read_csv(gaze_file, sep='\t')
@@ -43,17 +43,17 @@ class EPrimeReader:
 	def __init__(self, subject_number):
 		self.subject_number = subject_number
 
-	def read_eprime_data(self):
-	# Convert Eprime file in to tsv
-		eprime_input = "/study/midusref/DATA/Eyetracking/david_analysis/raw_data/MIDUSref_startle_order*_FINAL_VERSION-%s-%s.txt"%(self.subject_number, self.subject_number)
+	def read_eprime_data(self, eprime_raw_dir="/study/midusref/DATA/Eyetracking/david_analysis/raw_data/", eprime_out_dir="/study/midusref/DATA/Eyetracking/david_analysis/data_processed/"):
+		# Convert Eprime file in to tsv
+		eprime_input = f'{eprime_raw_dir}MIDUSref_startle_order*_FINAL_VERSION-{self.subject_number}-{self.subject_number}.txt'
 		eprime_input = glob.glob(eprime_input)
 		eprime_input = eprime_input[0]
 
-		os.makedirs("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/%s"%(self.subject_number), exist_ok=True)
-		os.system("eprime2tabfile %s > /study/midusref/DATA/Eyetracking/david_analysis/data_processed/%s/MIDUSref_FINAL_VERSION-%s-%s.tsv"%(eprime_input, self.subject_number, self.subject_number, self.subject_number))
-
+		os.makedirs("%s%s"%(eprime_out_dir, self.subject_number), exist_ok=True)
+		os.system(f'eprime2tabfile {eprime_input} > {eprime_raw_dir}{self.subject_number}/MIDUSref_FINAL_VERSION-{self.subject_number}-{self.subject_number}.tsv')
+		
 		# Read in Eprime data
-		e_prime_df = pd.read_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/%s/MIDUSref_FINAL_VERSION-%s-%s.tsv"%(self.subject_number, self.subject_number, self.subject_number), sep='\t')
+		e_prime_df = pd.read_csv("%s%s/MIDUSref_FINAL_VERSION-%s-%s.tsv"%(eprime_raw_dir, self.subject_number, self.subject_number, self.subject_number), sep='\t')
 		
 		return e_prime_df
 

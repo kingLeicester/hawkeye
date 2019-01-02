@@ -14,8 +14,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import glob
 from scipy import signal
-import deblink
-import nystrom_saccade_detector
+#import deblink
+#import nystrom_saccade_detector
 import more_itertools as mit
 
 from hawkeye import GazeReader
@@ -37,14 +37,14 @@ minimum_fixation_duration = 60
 #--------------------Gaze Data--------------------
 # Read in gaze data 
 gaze_reader = GazeReader(subject_number)
-gaze = gaze_reader.read_gaze_data()
+gaze = gaze_reader.read_gaze_data("/Users/SB/Desktop/hawkeye/")
 
 #gaze.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/MIDUSref_startle_order1_FINAL_VERSION-%s-%s.csv"%(subject_number, subject_number))
 
 #--------------------E-prime Data--------------------
 # Convert and read-in Eprime file in to tsv
 eprime_reader = EPrimeReader(subject_number)
-e_prime = eprime_reader.read_eprime_data()
+e_prime = eprime_reader.read_eprime_data("/Users/SB/Desktop/hawkeye/", "/Users/SB/Desktop/hawkeye/")
 
 #--------------------Gaze and E-prime Data Merged--------------------
 data_merged = pd.merge(gaze, e_prime, on='image')
