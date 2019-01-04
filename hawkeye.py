@@ -19,10 +19,11 @@ matplotlib.use('Agg') # Comment this out if graphing is not working
 import matplotlib.pyplot as plt
 import glob
 from scipy import signal
+import more_itertools as mit
 
 # These are Nate Vack's Work. Should be included in the package with Nate Vack's ownership
-#import deblink
-#import nystrom_saccade_detector
+import deblink
+import nystrom_saccade_detector
 
 class GazeReader:
 
@@ -49,11 +50,11 @@ class EPrimeReader:
 		eprime_input = glob.glob(eprime_input)
 		eprime_input = eprime_input[0]
 
-		os.makedirs("%s%s"%(eprime_out_dir, self.subject_number), exist_ok=True)
-		os.system(f'eprime2tabfile {eprime_input} > {eprime_raw_dir}{self.subject_number}/MIDUSref_FINAL_VERSION-{self.subject_number}-{self.subject_number}.tsv')
+		os.makedirs(f'{eprime_out_dir}{self.subject_number}', exist_ok=True)
+		os.system(f'eprime2tabfile {eprime_input} > {eprime_out_dir}{self.subject_number}/MIDUSref_FINAL_VERSION-{self.subject_number}-{self.subject_number}.tsv')
 		
 		# Read in Eprime data
-		e_prime_df = pd.read_csv("%s%s/MIDUSref_FINAL_VERSION-%s-%s.tsv"%(eprime_raw_dir, self.subject_number, self.subject_number, self.subject_number), sep='\t')
+		e_prime_df = pd.read_csv(f'{eprime_out_dir}{self.subject_number}/MIDUSref_FINAL_VERSION-{self.subject_number}-{self.subject_number}.tsv', sep='\t')
 		
 		return e_prime_df
 
@@ -194,7 +195,7 @@ class AOIScalar:
 		rectangle_aoi_data[['Xmax', 'Xmin', 'Ymax', 'Ymin']] = rectangle_aoi_data[['Xmax', 'Xmin', 'Ymax', 'Ymin']].astype(float)
 
 		# Scale AOI data to align with Tobbi Stimuli
-		# Resample AOI data to 800 x 600
+		# Resample AOI data to 1024 x 1280
 		rectangle_aoi_data['Xmax'] = (rectangle_aoi_data['Xmax'] * 1280) / 800
 
 		rectangle_aoi_data['Xmin'] = (rectangle_aoi_data['Xmin'] * 1280) / 800
@@ -206,7 +207,9 @@ class AOIScalar:
 		rectangle_aoi_data['Ymin'] = (rectangle_aoi_data['Ymin'] * 1024) / 600
 
 		# Change all negatvie values to 0 because it's a simple coordiante extension error (safe to assume it's at the edge of IAPS, thus 0)
-		rectangle_aoi_data.loc[(rectangle_aoi_data['Ymin'] < 0)] = 0
+		#rectangle_aoi_data['Ymin'][rectangle_aoi_data['Ymin'] < 0 ] = 0
+		rectangle_aoi_data.loc[rectangle_aoi_data['Ymin'] < 0, 'Ymin'] = 0
+
 
 		final_df = rectangle_aoi_data
 
@@ -232,7 +235,7 @@ class AOIScalar:
 		ellipse_aoi_data[['Xcenter','Ycenter','Height','Width']] = ellipse_aoi_data[['Xcenter','Ycenter','Height','Width']].astype(float)
 
 		# Scale AOI data to align with Tobbi Stimuli
-		# Resample AOI data to 800 x 600
+		# Resample AOI data to 1024 x 1280
 		ellipse_aoi_data['Xcenter'] = (ellipse_aoi_data['Xcenter'] * 1280) / 800
 		ellipse_aoi_data['Width'] = (ellipse_aoi_data['Width'] * 1280) / 800
 		ellipse_aoi_data['Ycenter'] = (ellipse_aoi_data['Ycenter'] * 1024) / 600
@@ -324,7 +327,7 @@ class SaccadeDetector:
 
 	def detect_saccade(self, data_frame):
 		gaze_array = data_frame[['x_deblinked', 'y_deblinked']].fillna(0).values
-		saccade_detector = nystrom_saccade_detector.AdaptiveDetector(gaze_array, self.sampling_rate, threshold_sd_scale=3)
+		saccade_detector = nystrom_saccade_detector.AdaptiveDetector(point_array=gaze_array, samples_per_second=self.sampling_rate, threshold_sd_scale=3)
 		saccade_detector._compute_saccades()
 		data_frame['saccade_candidate'] = saccade_detector._candidates
 
@@ -332,6 +335,55 @@ class SaccadeDetector:
 		final_df = data_frame
 
 		return (final_df)	
+
+class FixationDetector:
+
+	def __init__(self, one_sample_time, minimum_fixation_duration, image):
+		self.one_sample_time = one_sample_time
+		self.minimum_fixation_duration = minimum_fixation_duration
+		self.image = image
+
+	# Takes a dataframe with gaze points(fixations) and returns a nested list of indicies(fixations)
+	def detect_fixation(self, data_frame):
+
+		# Create a list of all indices that are fixations in IAPS
+		fixation_indices = list(data_frame.index)
+
+		# Group continous indicies 
+		# to figure out how many distinct fixations are there
+		# or to figure out how many times saccades intervened fixations
+		all_fixations_list = [list(group) for group in mit.consecutive_groups(fixation_indices)]
+
+		return (all_fixations_list)
+
+	def detect_true_fixation(self, fixation_list):
+		# Subset fixations that are longer than threshold
+		true_fixation_list = []
+
+		for fixation in fixation_list:
+			start_fixation = min(fixation)
+			end_fixation = max(fixation)
+			index_fixation = end_fixation - start_fixation
+			time_fixation_ms = index_fixation * self.one_sample_time
+			
+			if time_fixation_ms > self.minimum_fixation_duration:
+				true_fixation_list.append(fixation)
+
+		total_number_fixations = str(len(true_fixation_list))
+
+		return (total_number_fixations, true_fixation_list)
+
+	# Takes a nested list of indices (fixations) and returns total duration of all fixations
+	def compute_total_duration_fixation(self, fixation_list):
+
+		total_duration_IAPS = 0.0
+		for fixations in fixation_list:
+			total_duration_IAPS += (len(fixations) * self.one_sample_time)
+
+		total_duration_IAPS = round(total_duration_IAPS, 2)
+		total_duration_IAPS = str(total_duration_IAPS)
+
+		return (total_duration_IAPS)
 
 class GazeCompiler:
 	
@@ -395,4 +447,3 @@ class GazeCompiler:
 		df = pd.data_frame({'ellipse_value':ellipse_point_list})
 		final_df = pd.concat([data_frame, df], axis=1)
 		return (final_df)
-
