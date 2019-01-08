@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import glob
 from scipy import signal
 import more_itertools as mit
+from itertools import chain
 
 # These are Nate Vack's Work. Should be included in the package with Nate Vack's ownership
 import deblink
@@ -335,6 +336,49 @@ class SaccadeDetector:
 		final_df = data_frame
 
 		return (final_df)	
+
+	def compute_saccade_interval(self, data_frame: str) -> pd.DataFrame:
+	
+		# Get indices that are saccades 
+		saccade_candidate_t = (data_frame[data_frame['saccade_candidate'] == True]).index
+
+		# Get indices before/after each saccade (basically saccade intervals)
+		# Make a list of tuples (saccade intervals)
+		saccade_interval_list = []
+		for saccade_index in saccade_candidate_t:
+			saccade_interval = (saccade_index - 1, saccade_index + 1)
+			saccade_interval_list.append(saccade_interval)
+
+		print (saccade_interval_list)
+
+		# total index
+		minimum_index = min(data_frame.index)
+		maximum_index = max(data_frame.index)
+		total_index = (minimum_index, maximum_index)
+		print (total_index)
+
+		# unleash the intervals
+		#from itertools import chain
+		unleashed_interval_list = list(chain.from_iterable(range(start, end+1) for start, end in saccade_interval_list))
+		print (unleashed_interval_list)
+
+		# put both together
+		full_saccade_interval_list = []
+		for index in range(total_index[0], total_index[1]+1):
+			if index in unleashed_interval_list:
+				full_saccade_interval_list.append("saccade")
+			elif index not in unleashed_interval_list:
+				full_saccade_interval_list.append("fixation")
+
+
+		# Create saccade_interval column
+		data_frame['saccade_interval'] = pd.Series(full_saccade_interval_list)
+
+		# Rename first column of indices as "index" for future use
+		data_frame.index.rename('index', inplace=True)
+
+		return (data_frame)
+
 
 class FixationDetector:
 
