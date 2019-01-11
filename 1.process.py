@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Notes
 # definately have to merge before applying any filters
 # Q's
@@ -27,7 +29,7 @@ import re
 import math
 import numpy as np
 import matplotlib
-matplotlib.use('Agg') # Comment this out if graphing is not working
+#matplotlib.use('Agg') # Comment this out if graphing is not working
 import matplotlib.pyplot as plt
 import glob
 from scipy import signal
@@ -43,6 +45,7 @@ from hawkeye import AOIReader
 from hawkeye import AOIScalar
 from hawkeye import SignalDenoisor
 from hawkeye import SaccadeDetector
+from hawkeye import FixationDetector
 from hawkeye import GazeCompiler
 
 
@@ -108,7 +111,7 @@ for image in preDenoise_imageList:
 #--------------------Denoising2: Filter by Validity (Applies Differently by Subject)--------------------
 
 ##### Filter data by validity
-data_denoised = gaze_denosior.denoise_invalid(data_merged)
+data_denoised = gaze_denoisor.denoise_invalid(data_merged)
 
 # Total number of trials after Denoising #2
 post_denoise_gaze_count = len(data_denoised.index)
@@ -178,13 +181,13 @@ for image in postDenoise_imageList:
 	single_image_df.reset_index(drop=True, inplace=True)
 
 	# Fill in the empty coordinate columns with 0's
-	single_image_df['CursorX'] = single_image_df['CursorX'].fillna(0)
-	single_image_df['CursorY'] = single_image_df['CursorY'].fillna(0)
+	#single_image_df['CursorX'] = single_image_df['CursorX'].fillna(0)
+	#single_image_df['CursorY'] = single_image_df['CursorY'].fillna(0)
 
 	#--------------------Denoising 3: Median Filtering per each IAPS--------------------
-	signal_denoisor = SignalDenoisor(median_with_max, max_blink_sec, sampling_per_second)
+	signal_denoisor = SignalDenoisor(median_with_max, max_blink_sec, sample_per_second)
 	# Handles short (1-sample) dropouts and x & y values surrounding blinks
-	median_filtered_df = signal_denoisor.meidan_filter(single_image_df, median_with_max, sample_per_second)
+	median_filtered_df = signal_denoisor.meidan_filter(single_image_df)
 
 	# Create Offset values for QA purposes
 	median_filtered_df['raw_x_offset_column'] = median_filtered_df['CursorX'] + 30
@@ -214,7 +217,7 @@ for image in postDenoise_imageList:
 	# Inerpolate these cuts
 	# Simple forward-fill (alternative would be linear interpolation)
 
-	deblinked_df = signal_denoisor.remove_blinks(median_filtered_df, median_with_max, max_blink_sec, sample_per_second)
+	deblinked_df = signal_denoisor.remove_blinks(median_filtered_df)
 
 	# Create Offset values for QA purposes
 	deblinked_df['filtered_x_offset_column'] = deblinked_df['x_to_deblink'] + 30
@@ -238,9 +241,9 @@ for image in postDenoise_imageList:
 	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_2.deblinked.png'.format(subject_number, subject_number, image))
 
 	#--------------------Detect Saccades--------------------
-	saccade_detector = SaccadeDetector()
+	saccade_detector = SaccadeDetector(sample_per_second)
 
-	saccade_df = saccade_detector.detect_saccade(deblinked_df, sample_per_second)
+	saccade_df = saccade_detector.detect_saccade(deblinked_df)
 
 	# Get indices that are saccades 
 	candidate_t = (saccade_df[saccade_df['saccade_candidate'] == True]).index

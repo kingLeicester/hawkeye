@@ -326,9 +326,9 @@ class SaccadeDetector:
 	def __init__(self, sampling_rate):
 		self.sampling_rate = sampling_rate
 
-	def detect_saccade(self, data_frame):
+	def detect_saccade(self, data_frame: str) -> pd.DataFrame:
 		gaze_array = data_frame[['x_deblinked', 'y_deblinked']].fillna(0).values
-		saccade_detector = nystrom_saccade_detector.AdaptiveDetector(point_array=gaze_array, samples_per_second=self.sampling_rate, threshold_sd_scale=3)
+		saccade_detector = nystrom_saccade_detector.AdaptiveDetector(point_array=gaze_array, samples_per_second=self.sampling_rate, threshold_sd_scale=2.5)
 		saccade_detector._compute_saccades()
 		data_frame['saccade_candidate'] = saccade_detector._candidates
 
@@ -388,7 +388,7 @@ class FixationDetector:
 		self.image = image
 
 	# Takes a dataframe with gaze points(fixations) and returns a nested list of indicies(fixations)
-	def detect_fixation(self, data_frame):
+	def detect_fixation(self, data_frame: str) -> pd.DataFrame:
 
 		# Create a list of all indices that are fixations in IAPS
 		fixation_indices = list(data_frame.index)
