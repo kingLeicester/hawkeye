@@ -388,7 +388,7 @@ for image in postDenoise_imageList:
 										number_fixations_before_AOI = fixation_counter
 
 								number_fixations_before_AOI_list.append(fixation_counter)
-								print (f"-----d.number of fixations before fixation on AOI: {number_fixations_before_AOI}-----")
+								print ("-----d.number of fixations before fixation on AOI: {}-----".format(number_fixations_before_AOI_list))
 								print ("")
 							
 
@@ -532,13 +532,13 @@ for image in postDenoise_imageList:
 								print ("Initial fixation on IAPS and AOI match, good!")
 								print ("-----d.number of fixations before fixation on AOI: 0-----")
 								print ("")
-								umber_fixations_before_AOI_list.append("0")
+								number_fixations_before_AOI_list.append("0")
 
 							elif time_at_first_fixation_in_IAPS > time_at_first_fixation_in_AOI:
 								print ("Initial Fixation on AOI, good!")
 								print ("-----d.number of fixations before fixation on AOI: 0-----")
 								print ("")
-								umber_fixations_before_AOI_list.append("0")
+								number_fixations_before_AOI_list.append("0")
 
 							elif time_at_first_fixation_in_IAPS < time_at_first_fixation_in_AOI:
 								print ("Initial Fixation on IAPS, compute how many before hitting AOI")
@@ -552,7 +552,7 @@ for image in postDenoise_imageList:
 										number_fixations_before_AOI = fixation_counter
 
 								number_fixations_before_AOI_list.append(fixation_counter)
-								print (f"-----d.number of fixations before fixation on AOI: {number_fixations_before_AOI}-----")
+								print ("-----d.number of fixations before fixation on AOI: {}-----".format(number_fixations_before_AOI_list))
 								print ("")
 
 					else:

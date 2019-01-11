@@ -36,6 +36,8 @@ for file in files:
 print (counter)
 
 good_fixation_df = pd.DataFrame({"subject_number":subject_number_list,
-	"percent_fixation_on_all_aois":good_fixation_percent_list})
+	"percent_good_fixation_out_of_all_AOIs":good_fixation_percent_list})
 
+
+# This is percentag eout of total number of AOIs
 good_fixation_df.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/good_fixation.csv")
