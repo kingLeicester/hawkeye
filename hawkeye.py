@@ -341,7 +341,7 @@ class SaccadeDetector:
 	
 		# Get indices that are saccades 
 		saccade_candidate_t = (data_frame[data_frame['saccade_candidate'] == True]).index
-
+		
 		# Get indices before/after each saccade (basically saccade intervals)
 		# Make a list of tuples (saccade intervals)
 		saccade_interval_list = []
@@ -349,18 +349,18 @@ class SaccadeDetector:
 			saccade_interval = (saccade_index - 1, saccade_index + 1)
 			saccade_interval_list.append(saccade_interval)
 
-		print (saccade_interval_list)
+		#print (saccade_interval_list)
 
 		# total index
 		minimum_index = min(data_frame.index)
 		maximum_index = max(data_frame.index)
 		total_index = (minimum_index, maximum_index)
-		print (total_index)
+		#print (total_index)
 
 		# unleash the intervals
 		#from itertools import chain
 		unleashed_interval_list = list(chain.from_iterable(range(start, end+1) for start, end in saccade_interval_list))
-		print (unleashed_interval_list)
+		#print (unleashed_interval_list)
 
 		# put both together
 		full_saccade_interval_list = []
@@ -488,6 +488,6 @@ class GazeCompiler:
 			
 			ellipse_point_list.append(point)
 		
-		df = pd.data_frame({'ellipse_value':ellipse_point_list})
+		df = pd.DataFrame({'ellipse_value':ellipse_point_list})
 		final_df = pd.concat([data_frame, df], axis=1)
 		return (final_df)
