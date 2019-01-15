@@ -109,8 +109,9 @@ class GazeDenoisor:
 		# Keep trials with AT LEAST one good (valid) eye gaze 
 		# Use anything from 0 , 1 , or 2 in at least one eye
 		data_denoised = data_frame[(data_frame['ValidityLeftEye'] <= 2) | (data_frame['ValidityRightEye'] <= 2)] 
+
 		# For some reason, keep including "4" so manually drop trila that have 4 in BOTH left and right eye
-		data_denoised = data_denoised.drop(data_denoised[(data_denoised.ValidityLeftEye == 4) & (data_denoised.ValidityRightEye ==4)].index) 
+		data_denoised = data_denoised.drop(data_denoised[(data_denoised.ValidityLeftEye == 4) | (data_denoised.ValidityRightEye ==4)].index) 
 
 		final_df = data_denoised
 		return (final_df)
@@ -248,10 +249,11 @@ class AOIScalar:
 
 class SignalDenoisor:
 	
-	def __init__(self, median_with_max, max_blink_second, sampling_rate):
+	def __init__(self, median_with_max, max_blink_second, sampling_rate, maximum_gap_duration):
 		self.median_with_max = median_with_max
 		self.max_blink_second = max_blink_second
 		self.sampling_rate = sampling_rate
+		self.maximum_gap_duration = maximum_gap_duration
 
 	def meidan_filter(self, data_frame):
 		# Transform 'CursorX' and 'CursorY' into 2D arrays
@@ -269,6 +271,7 @@ class SignalDenoisor:
 
 		x_filtered = signal.medfilt(x, filter_width)
 		y_filtered = signal.medfilt(y, filter_width)
+
 		data_frame['x_filtered'] = x_filtered
 		data_frame['y_filtered'] = y_filtered
 
@@ -287,8 +290,12 @@ class SignalDenoisor:
 		x = data_frame['CursorX'].astype(float).values
 		y = data_frame['CursorY'].astype(float).values
 
+		# Apply 1/20s width median filter (Instantiated in the beggining)
+		# MEDIAN_WIDTH_MAX = 1.0 / 20
 		filter_width = self.sampling_rate * self.median_with_max
+		
 		if filter_width % 2 == 0 :
+			# It has to be an odd number
 			filter_width -= 1
 		filter_width = int(filter_width)
 
@@ -314,8 +321,34 @@ class SignalDenoisor:
 
 		data_frame['x_to_deblink'] = x_to_interp
 		data_frame['y_to_deblink'] = y_to_interp
-		data_frame['x_deblinked'] = data_frame['x_to_deblink'].fillna(method='ffill')
-		data_frame['y_deblinked'] = data_frame['y_to_deblink'].fillna(method='ffill')
+
+		### Interpolate if the gap is less than 75 ms (9 trials with 120 sample/second sampling rate)
+
+		# Group each consecutive gazes based on valid data (valid == 0, invalid(missing) ==1)
+		data_frame['deblink_group'] = np.where(data_frame['x_to_deblink'].isnull(), 1, 0)
+
+		# This is the maximum number of conseuctive missing data that will be interpolated. Anything more than 9 trials missing in a row, leave it NaN (do NOT interpolate)
+		if self.sampling_rate == 120.0:
+			threshold = 9
+			print (f"threshold for interpolating: {threshold}")
+		else:
+			#compute new thershold to nearest whole number
+			threshold = round(self.maximum_gap_duration/(self.sampling_rate/1000))
+			print (f"new threshold for interpolating: {threshold}")
+
+		# Out of all data that needs to be interpolated (anything less than gap of 75ms or less), group them by the number of consecutive trials
+		data_frame['number_consecutive'] = data_frame.deblink_group.groupby((data_frame.deblink_group != data_frame.deblink_group.shift()).cumsum()).transform('size') * data_frame.deblink_group
+
+		# Group each consecutive gaze based on number_consecutive (more than threshold == 0, less than threshold (interpolate) == 1)
+		data_frame['consecutive_interpolate'] = np.where(data_frame.number_consecutive > threshold, 0, 1)
+
+		# Just interpolate gaze that is less than 75ms maximum gap duration (less than threshold)
+		data_frame['x_deblinked'] = data_frame.groupby('consecutive_interpolate')['x_to_deblink'].ffill()
+		data_frame['y_deblinked'] = data_frame.groupby('consecutive_interpolate')['y_to_deblink'].ffill()
+
+		# Interpolate using forward-fill
+		#data_frame['x_deblinked'] = data_frame['x_to_deblink'].fillna(method='ffill')
+		#data_frame['y_deblinked'] = data_frame['y_to_deblink'].fillna(method='ffill')
 
 		final_df = data_frame
 

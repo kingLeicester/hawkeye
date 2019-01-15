@@ -52,9 +52,11 @@ from hawkeye import GazeCompiler
 subject_number = sys.argv[1]
 
 coordinate_limits = (0, 1280)
+sample_limits = (0, 500)
 median_with_max = 1.0 / 20
 max_blink_sec = 0.4
 minimum_fixation_duration = 60
+maximum_gap_duration = 75
 
 #--------------------Gaze Data--------------------
 # Read in gaze data 
@@ -185,7 +187,7 @@ for image in postDenoise_imageList:
 	#single_image_df['CursorY'] = single_image_df['CursorY'].fillna(0)
 
 	#--------------------Denoising 3: Median Filtering per each IAPS--------------------
-	signal_denoisor = SignalDenoisor(median_with_max, max_blink_sec, sample_per_second)
+	signal_denoisor = SignalDenoisor(median_with_max, max_blink_sec, sample_per_second, maximum_gap_duration)
 	# Handles short (1-sample) dropouts and x & y values surrounding blinks
 	median_filtered_df = signal_denoisor.meidan_filter(single_image_df)
 
@@ -197,9 +199,10 @@ for image in postDenoise_imageList:
 	#coordinate_limits = (0, 1280)
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
+	plt.xlim(sample_limits)
 	fig.suptitle('subject%s %s Denoise 1: Median Filtered'%(subject_number, image))
 	plt.ylabel("Coordinates")
-	plt.xlabel("Trials")
+	plt.xlabel("# Samples")
 	plt.plot(median_filtered_df['raw_x_offset_column'], 'k', alpha=0.5)
 	plt.plot(median_filtered_df['x_filtered'], 'b', alpha=0.5)
 	plt.plot(median_filtered_df['raw_y_offset_column'], 'g', alpha=0.5)
@@ -226,9 +229,10 @@ for image in postDenoise_imageList:
 	# Plot deblinked
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
+	plt.xlim(sample_limits)
 	fig.suptitle('subject%s %s Denoise 2: Deblinked'%(subject_number, image))
 	plt.ylabel("Coordinates")
-	plt.xlabel("Trials")
+	plt.xlabel("# Samples")
 	plt.plot(deblinked_df['filtered_x_offset_column'], color='k', alpha=0.5)
 	plt.plot(deblinked_df['x_deblinked'], color='b', alpha=0.5)
 	plt.plot(deblinked_df['filtered_y_offset_column'], color='g', alpha=0.5)
@@ -251,13 +255,14 @@ for image in postDenoise_imageList:
 	# Plot vertical lines at saccades
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
+	plt.xlim(sample_limits)
 	plt.plot(saccade_df['x_deblinked'], color='k', alpha=0.8)
 	plt.plot(saccade_df['y_deblinked'], color='g', alpha=0.8)
 	for t in candidate_t:
 	    plt.axvline(t, 0, 1, color='r')
 	fig.suptitle('subject%s %s Denoise 3: Saccades'%(subject_number, image))
 	plt.ylabel("Coordinates")
-	plt.xlabel("Trials")
+	plt.xlabel("# Samples")
 	plt.legend(['X', 'Y'], loc='upper left')
 	#plt.show()
 
