@@ -204,11 +204,16 @@ deblinked_df = signal_denoisor.remove_blinks(median_filtered_df)
 deblinked_df['filtered_x_offset_column'] = deblinked_df['x_to_deblink'] + 30
 deblinked_df['filtered_y_offset_column'] = deblinked_df['y_to_deblink'] + 30
 
+#--------------------Denoising5: Interpolate--------------------
+
+interpolated_df = signal_denoisor.interpolate(deblinked_df)
+signal_denoisor.compute_interpolation_ratio(interpolated_df)
+
 #--------------------Detect Saccades--------------------
 saccade_detector = SaccadeDetector(sample_per_second)
 
 # Create a column with the points when saccades occur
-saccade_detected_df = saccade_detector.detect_saccade(deblinked_df)
+saccade_detected_df = saccade_detector.detect_saccade(interpolated_df)
 
 # Compute total saccade duration
 saccade_candidate_t = (saccade_detected_df[saccade_detected_df['saccade_candidate'] == True]).index
@@ -219,7 +224,7 @@ saccade_df = saccade_detector.compute_saccade_interval(saccade_detected_df)
 
 saccade_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/saccade_data_{image}_{subject_number}.csv")
 
-
+exit()
 #--------------------Detect Fixations--------------------
 # Create dataFrame of only fixations
 fixation_df = saccade_df.loc[saccade_df['saccade_candidate'] == False]

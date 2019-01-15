@@ -260,8 +260,8 @@ class SignalDenoisor:
 		x = data_frame['CursorX'].astype(float).values
 		y = data_frame['CursorY'].astype(float).values
 
+		# sampling rate is sample per second
 		# Apply 1/20s width median filter (Instantiated in the beggining)
-		# MEDIAN_WIDTH_MAX = 1.0 / 20
 		filter_width = self.sampling_rate * self.median_with_max
 
 		if filter_width % 2 == 0 :
@@ -322,6 +322,15 @@ class SignalDenoisor:
 		data_frame['x_to_deblink'] = x_to_interp
 		data_frame['y_to_deblink'] = y_to_interp
 
+		# Interpolate using forward-fill
+		#data_frame['x_deblinked'] = data_frame['x_to_deblink'].fillna(method='ffill')
+		#data_frame['y_deblinked'] = data_frame['y_to_deblink'].fillna(method='ffill')
+
+		final_df = data_frame
+
+		return (final_df)
+
+	def interpolate(self, data_frame):
 		### Interpolate if the gap is less than 75 ms (9 trials with 120 sample/second sampling rate)
 
 		# Group each consecutive gazes based on valid data (valid == 0, invalid(missing) ==1)
@@ -346,13 +355,30 @@ class SignalDenoisor:
 		data_frame['x_deblinked'] = data_frame.groupby('consecutive_interpolate')['x_to_deblink'].ffill()
 		data_frame['y_deblinked'] = data_frame.groupby('consecutive_interpolate')['y_to_deblink'].ffill()
 
-		# Interpolate using forward-fill
-		#data_frame['x_deblinked'] = data_frame['x_to_deblink'].fillna(method='ffill')
-		#data_frame['y_deblinked'] = data_frame['y_to_deblink'].fillna(method='ffill')
-
 		final_df = data_frame
 
 		return (final_df)
+
+	def compute_interpolation_ratio(self, data_frame):
+
+		consecutive_list = list(data_frame['number_consecutive'])
+		total_number_samples = len(consecutive_list)
+		number_interpolated = sum(int(num) > 0 and int(num) <= 9 for num in consecutive_list)
+		number_original = sum(int(num) == 0 for num in consecutive_list)
+		number_missing = sum(int(num) > 9 for num in consecutive_list)
+
+		if number_interpolated + number_original + number_missing == total_number_samples:
+			print ("number of data checks out")
+			missing_data_ratio = round((number_missing/total_number_samples) * 100, 2)
+			interpolated_data_ratio = round((number_interpolated/total_number_samples) * 100, 2)
+			original_data_ratio = round((number_original/total_number_samples) * 100, 2)
+			print (f"percent missing data :{missing_data_ratio}% ({number_missing}/{total_number_samples})")
+			print (f"percent interpolated data :{interpolated_data_ratio}% ({number_interpolated}/{total_number_samples})")
+			print (f"percent origianl data :{original_data_ratio}% ({number_original}/{total_number_samples})")
+
+		else:
+			print ("number of data does NOT check out, check you math!")
+			
 
 class SaccadeDetector:
 

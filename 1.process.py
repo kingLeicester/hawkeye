@@ -234,9 +234,9 @@ for image in postDenoise_imageList:
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
 	plt.plot(deblinked_df['filtered_x_offset_column'], color='k', alpha=0.5)
-	plt.plot(deblinked_df['x_deblinked'], color='b', alpha=0.5)
+	plt.plot(deblinked_df['x_to_deblink'], color='b', alpha=0.5)
 	plt.plot(deblinked_df['filtered_y_offset_column'], color='g', alpha=0.5)
-	plt.plot(deblinked_df['y_deblinked'], color='y', alpha=0.5)
+	plt.plot(deblinked_df['y_to_deblink'], color='y', alpha=0.5)
 	plt.legend(['filtered_X', 'deblinked_X', 'filtered_Y', 'deblinked_Y'], loc='upper left')
 	#plt.show()
 	
@@ -244,10 +244,31 @@ for image in postDenoise_imageList:
 	print ("creating deblinked plot for {}".format(image))
 	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_2.deblinked.png'.format(subject_number, subject_number, image))
 
+	#--------------------Denoising5: Interpolate--------------------
+
+	interpolated_df = signal_denoisor.interpolate(deblinked_df)
+	signal_denoisor.compute_interpolation_ratio(interpolated_df)
+
+	# Plot deblinked
+	fig = plt.figure(figsize=(14, 4))
+	plt.ylim(coordinate_limits)
+	plt.xlim(sample_limits)
+	fig.suptitle('subject%s %s Denoise 3: Interpolated'%(subject_number, image))
+	plt.ylabel("Coordinates")
+	plt.xlabel("# Samples")
+	plt.plot(interpolated_df['x_deblinked'], color='b', alpha=0.5)
+	plt.plot(interpolated_df['y_deblinked'], color='y', alpha=0.5)
+	plt.legend(['interpolated_X', 'interpolated_Y'], loc='upper left')
+	#plt.show()
+	
+	os.makedirs('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}'.format(subject_number), exist_ok = True)
+	print ("creating interpolated plot for {}".format(image))
+	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_3.interpolated.png'.format(subject_number, subject_number, image))
+
 	#--------------------Detect Saccades--------------------
 	saccade_detector = SaccadeDetector(sample_per_second)
 
-	saccade_df = saccade_detector.detect_saccade(deblinked_df)
+	saccade_df = saccade_detector.detect_saccade(interpolated_df)
 
 	# Get indices that are saccades 
 	candidate_t = (saccade_df[saccade_df['saccade_candidate'] == True]).index
@@ -260,7 +281,7 @@ for image in postDenoise_imageList:
 	plt.plot(saccade_df['y_deblinked'], color='g', alpha=0.8)
 	for t in candidate_t:
 	    plt.axvline(t, 0, 1, color='r')
-	fig.suptitle('subject%s %s Denoise 3: Saccades'%(subject_number, image))
+	fig.suptitle('subject%s %s Analysis 1: Saccades Detected'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
 	plt.legend(['X', 'Y'], loc='upper left')
@@ -271,7 +292,7 @@ for image in postDenoise_imageList:
 	# Create Plotsplt.suptitle('subject%s %s'%(subject_number, image))
 	os.makedirs('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}'.format(subject_number), exist_ok = True)
 	print ("creating saccade plot for {}".format(image))
-	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_3.saccade.png'.format(subject_number, subject_number, image))
+	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_4.saccade.png'.format(subject_number, subject_number, image))
 	
 	#--------------------Detect Fixations--------------------
 
