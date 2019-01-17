@@ -249,11 +249,12 @@ class AOIScalar:
 
 class SignalDenoisor:
 	
-	def __init__(self, median_with_max, max_blink_second, sampling_rate, maximum_gap_duration):
+	def __init__(self, median_with_max, max_blink_second, sampling_rate, maximum_gap_duration, maximum_gap_threshold):
 		self.median_with_max = median_with_max
 		self.max_blink_second = max_blink_second
 		self.sampling_rate = sampling_rate
 		self.maximum_gap_duration = maximum_gap_duration
+		self.maximum_gap_threshold = maximum_gap_threshold
 
 	def meidan_filter(self, data_frame):
 		# Transform 'CursorX' and 'CursorY' into 2D arrays
@@ -275,6 +276,9 @@ class SignalDenoisor:
 		data_frame['x_filtered'] = x_filtered
 		data_frame['y_filtered'] = y_filtered
 
+		# from filtered data, delete rows if original X,Y gaze is missing
+		data_frame = data_frame[pd.notnull(data_frame['CursorX'])]
+
 		final_df = data_frame
 
 		return (final_df)
@@ -286,28 +290,32 @@ class SignalDenoisor:
 
 		#reload(deblink)
 
-		# Transform 'CursorX' and 'CursorY' into 2D arrays
-		x = data_frame['CursorX'].astype(float).values
-		y = data_frame['CursorY'].astype(float).values
+		# # Transform 'CursorX' and 'CursorY' into 2D arrays
+		# x = data_frame['CursorX'].astype(float).values
+		# y = data_frame['CursorY'].astype(float).values
 
-		# Apply 1/20s width median filter (Instantiated in the beggining)
-		# MEDIAN_WIDTH_MAX = 1.0 / 20
-		filter_width = self.sampling_rate * self.median_with_max
+		# # Apply 1/20s width median filter (Instantiated in the beggining)
+		# # MEDIAN_WIDTH_MAX = 1.0 / 20
+		# filter_width = self.sampling_rate * self.median_with_max
 		
-		if filter_width % 2 == 0 :
-			# It has to be an odd number
-			filter_width -= 1
-		filter_width = int(filter_width)
+		# if filter_width % 2 == 0 :
+		# 	# It has to be an odd number
+		# 	filter_width -= 1
+		# filter_width = int(filter_width)
 
-		x_filtered = signal.medfilt(x, filter_width)
-		y_filtered = signal.medfilt(y, filter_width)
-		#data_frame['x_filtered'] = x_filtered
-		#data_frame['y_filtered'] = y_filtered
+		x_filtered  = data_frame['x_filtered'].astype(float).values
+		y_filtered = data_frame['y_filtered'].astype(float).values
+		# x_filtered = signal.medfilt(x, filter_width)
+		# y_filtered = signal.medfilt(y, filter_width)
+		# #data_frame['x_filtered'] = x_filtered
+		# #data_frame['y_filtered'] = y_filtered
 
-		l_valid = data_frame['ValidityLeftEye'] < 2  # Maybe < 4? I mostly see 0 and 4.
-		r_valid = data_frame['ValidityRightEye'] < 2
-		l_valid_filt = signal.medfilt(l_valid, filter_width)
-		r_valid_filt = signal.medfilt(r_valid, filter_width)
+		# l_valid = data_frame['ValidityLeftEye'] < 2  # Maybe < 4? I mostly see 0 and 4.
+		# r_valid = data_frame['ValidityRightEye'] < 2
+		# l_valid_filt = signal.medfilt(l_valid, filter_width)
+		# r_valid_filt = signal.medfilt(r_valid, filter_width)
+		l_valid_filt = data_frame['x_filtered']
+		r_valid_filt = data_frame['y_filtered']
 		valid = (l_valid_filt * r_valid_filt).astype(float)
 
 		# This will find us all the invalid periods of data
@@ -319,8 +327,8 @@ class SignalDenoisor:
 		    x_to_interp[start:end] = np.nan
 		    y_to_interp[start:end] = np.nan
 
-		data_frame['x_to_deblink'] = x_to_interp
-		data_frame['y_to_deblink'] = y_to_interp
+		data_frame['x_deblinked'] = x_to_interp
+		data_frame['y_deblinked'] = y_to_interp
 
 		# Interpolate using forward-fill
 		#data_frame['x_deblinked'] = data_frame['x_to_deblink'].fillna(method='ffill')
@@ -334,26 +342,26 @@ class SignalDenoisor:
 		### Interpolate if the gap is less than 75 ms (9 trials with 120 sample/second sampling rate)
 
 		# Group each consecutive gazes based on valid data (valid == 0, invalid(missing) ==1)
-		data_frame['deblink_group'] = np.where(data_frame['x_to_deblink'].isnull(), 1, 0)
+		data_frame['deblink_group'] = np.where(data_frame['x_deblinked'].isnull(), 1, 0)
 
-		# This is the maximum number of conseuctive missing data that will be interpolated. Anything more than 9 trials missing in a row, leave it NaN (do NOT interpolate)
-		if self.sampling_rate == 120.0:
-			threshold = 9
-			print (f"threshold for interpolating: {threshold}")
-		else:
-			#compute new thershold to nearest whole number
-			threshold = round(self.maximum_gap_duration/(self.sampling_rate/1000))
-			print (f"new threshold for interpolating: {threshold}")
+		# # This is the maximum number of conseuctive missing data that will be interpolated. Anything more than 9 trials missing in a row, leave it NaN (do NOT interpolate)
+		# if self.sampling_rate == 120.0:
+		# 	threshold = 9
+		# 	print (f"threshold for interpolating: {threshold}")
+		# else:
+		# 	#compute new thershold to nearest whole number
+		# 	threshold = round(self.maximum_gap_duration/(self.sampling_rate/1000))
+		# 	print (f"new threshold for interpolating: {threshold}")
 
 		# Out of all data that needs to be interpolated (anything less than gap of 75ms or less), group them by the number of consecutive trials
 		data_frame['number_consecutive'] = data_frame.deblink_group.groupby((data_frame.deblink_group != data_frame.deblink_group.shift()).cumsum()).transform('size') * data_frame.deblink_group
 
 		# Group each consecutive gaze based on number_consecutive (more than threshold == 0, less than threshold (interpolate) == 1)
-		data_frame['consecutive_interpolate'] = np.where(data_frame.number_consecutive > threshold, 0, 1)
+		data_frame['consecutive_interpolate'] = np.where(data_frame.number_consecutive > self.maximum_gap_threshold, 0, 1)
 
 		# Just interpolate gaze that is less than 75ms maximum gap duration (less than threshold)
-		data_frame['x_deblinked'] = data_frame.groupby('consecutive_interpolate')['x_to_deblink'].ffill()
-		data_frame['y_deblinked'] = data_frame.groupby('consecutive_interpolate')['y_to_deblink'].ffill()
+		data_frame['x_interpolated'] = data_frame.groupby('consecutive_interpolate')['x_deblinked'].ffill()
+		data_frame['y_interpolated'] = data_frame.groupby('consecutive_interpolate')['y_deblinked'].ffill()
 
 		final_df = data_frame
 
@@ -363,9 +371,9 @@ class SignalDenoisor:
 
 		consecutive_list = list(data_frame['number_consecutive'])
 		total_number_samples = len(consecutive_list)
-		number_interpolated = sum(int(num) > 0 and int(num) <= 9 for num in consecutive_list)
+		number_interpolated = sum(int(num) > 0 and int(num) <= self.maximum_gap_threshold for num in consecutive_list)
 		number_original = sum(int(num) == 0 for num in consecutive_list)
-		number_missing = sum(int(num) > 9 for num in consecutive_list)
+		number_missing = sum(int(num) > self.maximum_gap_threshold for num in consecutive_list)
 
 		if number_interpolated + number_original + number_missing == total_number_samples:
 			print ("number of data checks out")
@@ -386,11 +394,13 @@ class SaccadeDetector:
 		self.sampling_rate = sampling_rate
 
 	def detect_saccade(self, data_frame: str) -> pd.DataFrame:
-		gaze_array = data_frame[['x_deblinked', 'y_deblinked']].fillna(0).values
+		gaze_array = data_frame[['x_interpolated', 'y_interpolated']].fillna(0).values
 		saccade_detector = nystrom_saccade_detector.AdaptiveDetector(point_array=gaze_array, samples_per_second=self.sampling_rate, threshold_sd_scale=2.5)
 		saccade_detector._compute_saccades()
 		data_frame['saccade_candidate'] = saccade_detector._candidates
 
+		# Replace saccaded candidates that are missing values with NaN
+		#data_frame.loc[data_frame['consecutive_interpolate'] == 1, 'saccade_candidate'] = "missing"
 
 		final_df = data_frame
 
@@ -410,7 +420,7 @@ class SaccadeDetector:
 
 		#print (saccade_interval_list)
 
-		# total index
+		# total index range
 		minimum_index = min(data_frame.index)
 		maximum_index = max(data_frame.index)
 		total_index = (minimum_index, maximum_index)
@@ -437,6 +447,17 @@ class SaccadeDetector:
 		data_frame.index.rename('index', inplace=True)
 
 		return (data_frame)
+
+	def detect_missing_data(self, data_frame: str) -> pd.DataFrame:
+
+
+		data_frame['final_gaze_type'] = data_frame['saccade_interval']
+		data_frame.loc[data_frame['consecutive_interpolate'] == 0, 'final_gaze_type'] = "missing"
+		data_frame.loc[(data_frame['saccade_candidate'] == False) & (data_frame['final_gaze_type'] == "saccade"), 'final_gaze_type'] = "fixation"
+		data_frame.loc[(data_frame['saccade_candidate'] == True) & (data_frame['final_gaze_type'] == "missing"), 'final_gaze_type'] = "saccade"
+
+		return (data_frame)
+
 
 
 class FixationDetector:
