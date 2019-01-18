@@ -77,42 +77,38 @@ data_merged = pd.merge(gaze, e_prime, on='image')
 gaze_denoisor = GazeDenoisor()
 
 sample_per_second = gaze_denoisor.compute_sampling_rate(data_merged)
-print ("Sampling rate for %s: %s/s"%(subject_number, sample_per_second))
+print ("-Sampling rate for %s: %s/s"%(subject_number, sample_per_second))
 
 one_sample_time = round((1/sample_per_second) * 1000, 1)
+print (f"-One sample time: {one_sample_time}ms")
 
 #--------------------Interpolation Threshold--------------------
 # This is the maximum number of conseuctive missing data that will be interpolated. Anything more than 9 trials missing in a row, leave it NaN (do NOT interpolate)
 if sample_per_second == 120.0:
 	maximum_gap_threshold = 9
-	print (f"threshold for interpolating: {maximum_gap_threshold}")
+	print (f"-threshold for interpolating: {maximum_gap_threshold} samples")
 else:
 	#compute new thershold to nearest whole number
-	maximum_gap_threshold = round(maximum_gap_duration/(sample_per_second/1000))
-	print (f"new threshold for interpolating: {maximum_gap_threshold}")
+	maximum_gap_threshold = round(maximum_gap_duration/one_sample_time)
+	print (f"-new threshold for interpolating: {maximum_gap_threshold} samples")
 
 #--------------------Denoising1: Remove 6 Practice Picture, Pause, and Fixation Cross (~1000ms) Trials (Applies Universally)--------------------
 data_merged = gaze_denoisor.denoise_practice_and_pause(data_merged)
-
-#### Total number of raw trials (after denoising 1 though)
-raw_gaze_count = len(data_merged.index)
-print ("raw_trials: " + str(raw_gaze_count))
-
 data_merged = gaze_denoisor.denoise_fixation_cross(data_merged)
 
-### Total number of trials after Denoising #1
-pre_denoise_gaze_count = len(data_merged.index)
-print ("pre_denoise_trials: " + str(pre_denoise_gaze_count))
+### Total number of smples after Denoising #1
+raw_gaze_count = len(data_merged.index)
+print ("-raw_sample_count: " + str(raw_gaze_count))
 
 ### Total number of stims (IAPS) after Denoising #1
-preDenoise_imageList = data_merged['image'].unique()
-preDenoise_stim_count = str(len(preDenoise_imageList))
-print ("pre_denoise_stim_count: " + preDenoise_stim_count)
+raw_image_list = data_merged['image'].unique()
+raw_stim_count = str(len(raw_image_list))
+print ("-raw_stim_count: " + raw_stim_count)
 
 ### Figure out indexing before further denoising (later used in constructing plots in all 4000ms)
 indexLengthDict = {}
 indexListDict = {}
-for image in preDenoise_imageList:
+for image in raw_image_list:
 	sample_image = data_merged.loc[data_merged['image'] == image]
 	minIndex = (min(sample_image.index))
 	maxIndex = (max(sample_image.index))
@@ -127,49 +123,48 @@ data_denoised = gaze_denoisor.denoise_invalid(data_merged)
 
 # Total number of trials after Denoising #2
 post_denoise_gaze_count = len(data_denoised.index)
-print ("post_denoise_trials: " + str(post_denoise_gaze_count))
+print ("-post_denoise_sample_count: " + str(post_denoise_gaze_count))
 
 # Total number of stim count after Denoising #2
 postDenoise_imageList = data_denoised['image'].unique()
 postDenoise_stim_count = str(len(postDenoise_imageList))
-print ("post_denoise_stim_count: " + postDenoise_stim_count)
-
+print ("-post_denoise_stim_count: " + postDenoise_stim_count)
 
 # Figure out which Stim has been removed due to Denoising #2
-missingIAPSList = list(set(preDenoise_imageList) - set(postDenoise_imageList))
-print (missingIAPSList)
+missingIAPSList = list(set(raw_image_list) - set(postDenoise_imageList))
+print ("-missing_IAPS", missingIAPSList)
 
 # Compare missingIAPSList to the Original, figure out which Nth element is missing
 missing_stim_number_list = [] 
-for index, stim in enumerate(preDenoise_imageList):
+for index, stim in enumerate(raw_image_list):
 	for missingIAPS in missingIAPSList:
 		if missingIAPS == stim:
 			stim_number = "stim_" + str(index + 1)
 			missing_stim_number_list.append(stim_number)
-print (missing_stim_number_list)
+print ("-missing_stim_number", missing_stim_number_list)
 
 # Total valid data after Denoising #2
-percent_good_data_subject = round((post_denoise_gaze_count/pre_denoise_gaze_count) * 100, 2)
-print ("Percent Good Data for subject {}: {}%".format(subject_number, percent_good_data_subject))
+percent_good_data_subject = round((post_denoise_gaze_count/raw_gaze_count) * 100, 2)
+print ("=====Percent Good Data for subject {}: {}% (Out of 4s picture onset time)=====".format(subject_number, percent_good_data_subject))
 
-#--------------------AOI data--------------------
-aoi_reader = AOIReader()
+# #--------------------AOI data--------------------
+# aoi_reader = AOIReader()
 
-aoi = aoi_reader.read_in_AOI(data_denoised)
+# aoi = aoi_reader.read_in_AOI(data_denoised)
 
-rectangle_aoi_df = aoi[(aoi['AOItype'] == 'Rectangle')]
-rectangle_aoi_df = rectangle_aoi_df.reset_index(drop=True)
+# rectangle_aoi_df = aoi[(aoi['AOItype'] == 'Rectangle')]
+# rectangle_aoi_df = rectangle_aoi_df.reset_index(drop=True)
 
-ellipse_aoi_df = aoi[(aoi['AOItype'] == 'Ellipse')]
-ellipse_aoi_df = ellipse_aoi_df.reset_index(drop=True)
+# ellipse_aoi_df = aoi[(aoi['AOItype'] == 'Ellipse')]
+# ellipse_aoi_df = ellipse_aoi_df.reset_index(drop=True)
 
-aoi_scalar = AOIScalar()
+# aoi_scalar = AOIScalar()
 
-### Refine coordinates for Rectangles
-rectangle_aoi_data = aoi_scalar.scale_rectangle_aoi(rectangle_aoi_df)
+# ### Refine coordinates for Rectangles
+# rectangle_aoi_data = aoi_scalar.scale_rectangle_aoi(rectangle_aoi_df)
 
-### Refine coordinates for Ellipses
-ellipse_aoi_data = aoi_scalar.scale_ellipse_aoi(ellipse_aoi_df)
+# ### Refine coordinates for Ellipses
+# ellipse_aoi_data = aoi_scalar.scale_ellipse_aoi(ellipse_aoi_df)
 
 
 #--------------------Raw vs. Interpolated Data--------------------

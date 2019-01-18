@@ -55,43 +55,38 @@ data_merged = pd.merge(gaze, e_prime, on='image')
 gaze_denoisor = GazeDenoisor()
 
 sample_per_second = gaze_denoisor.compute_sampling_rate(data_merged)
-print ("Sampling rate for %s: %s/s"%(subject_number, sample_per_second))
+print ("-Sampling rate for %s: %s/s"%(subject_number, sample_per_second))
 
 one_sample_time = round((1/sample_per_second) * 1000, 1)
-print (f"One sample time: {one_sample_time}")
+print (f"-One sample time: {one_sample_time}ms")
 
 #--------------------Interpolation Threshold--------------------
 # This is the maximum number of conseuctive missing data that will be interpolated. Anything more than 9 trials missing in a row, leave it NaN (do NOT interpolate)
 if sample_per_second == 120.0:
 	maximum_gap_threshold = 9
-	print (f"threshold for interpolating: {maximum_gap_threshold}")
+	print (f"-threshold for interpolating: {maximum_gap_threshold} samples")
 else:
 	#compute new thershold to nearest whole number
-	maximum_gap_threshold = round(maximum_gap_duration/(sample_per_second/1000))
-	print (f"new threshold for interpolating: {maximum_gap_threshold}")
+	maximum_gap_threshold = round(maximum_gap_duration/one_sample_time)
+	print (f"-new threshold for interpolating: {maximum_gap_threshold} samples")
 
 #--------------------Denoising1: Remove 6 Practice Picture, Pause, and Fixation Cross (~1000ms) Trials (Applies Universally)--------------------
 data_merged = gaze_denoisor.denoise_practice_and_pause(data_merged)
-
-#### Total number of raw trials (after denoising 1 though)
-raw_gaze_count = len(data_merged.index)
-print ("raw_trials: " + str(raw_gaze_count))
-
 data_merged = gaze_denoisor.denoise_fixation_cross(data_merged)
 
-### Total number of trials after Denoising #1
-pre_denoise_gaze_count = len(data_merged.index)
-print ("pre_denoise_trials: " + str(pre_denoise_gaze_count))
+### Total number of smples after Denoising #1
+raw_gaze_count = len(data_merged.index)
+print ("-raw_sample_count: " + str(raw_gaze_count))
 
 ### Total number of stims (IAPS) after Denoising #1
-preDenoise_imageList = data_merged['image'].unique()
-preDenoise_stim_count = str(len(preDenoise_imageList))
-print ("pre_denoise_stim_count: " + preDenoise_stim_count)
+raw_image_list = data_merged['image'].unique()
+raw_stim_count = str(len(raw_image_list))
+print ("-raw_stim_count: " + raw_stim_count)
 
 ### Figure out indexing before further denoising (later used in constructing plots in all 4000ms)
 indexLengthDict = {}
 indexListDict = {}
-for image in preDenoise_imageList:
+for image in raw_image_list:
 	sample_image = data_merged.loc[data_merged['image'] == image]
 	minIndex = (min(sample_image.index))
 	maxIndex = (max(sample_image.index))
@@ -106,51 +101,51 @@ data_denoised = gaze_denoisor.denoise_invalid(data_merged)
 
 # Total number of trials after Denoising #2
 post_denoise_gaze_count = len(data_denoised.index)
-print ("post_denoise_trials: " + str(post_denoise_gaze_count))
+print ("-post_denoise_sample_count: " + str(post_denoise_gaze_count))
 
 # Total number of stim count after Denoising #2
 postDenoise_imageList = data_denoised['image'].unique()
 postDenoise_stim_count = str(len(postDenoise_imageList))
-print ("post_denoise_stim_count: " + postDenoise_stim_count)
-
+print ("-post_denoise_stim_count: " + postDenoise_stim_count)
 
 # Figure out which Stim has been removed due to Denoising #2
-missingIAPSList = list(set(preDenoise_imageList) - set(postDenoise_imageList))
-print (missingIAPSList)
+missingIAPSList = list(set(raw_image_list) - set(postDenoise_imageList))
+print ("-missing_IAPS", missingIAPSList)
 
 # Compare missingIAPSList to the Original, figure out which Nth element is missing
 missing_stim_number_list = [] 
-for index, stim in enumerate(preDenoise_imageList):
+for index, stim in enumerate(raw_image_list):
 	for missingIAPS in missingIAPSList:
 		if missingIAPS == stim:
 			stim_number = "stim_" + str(index + 1)
 			missing_stim_number_list.append(stim_number)
-print (missing_stim_number_list)
+print ("-missing_stim_number", missing_stim_number_list)
 
 # Total valid data after Denoising #2
-percent_good_data_subject = round((post_denoise_gaze_count/pre_denoise_gaze_count) * 100, 2)
-print ("=====Percent Good Data for subject {}: {}%=====".format(subject_number, percent_good_data_subject))
+percent_good_data_subject = round((post_denoise_gaze_count/raw_gaze_count) * 100, 2)
+print ("=====Percent Good Data for subject {}: {}% (Out of 4s picture onset time)=====".format(subject_number, percent_good_data_subject))
 
 #--------------------AOI data--------------------
-aoi_reader = AOIReader()
+# aoi_reader = AOIReader()
 
-aoi = aoi_reader.read_in_AOI(data_denoised)
+# aoi = aoi_reader.read_in_AOI(data_denoised)
 
-rectangle_aoi_df = aoi[(aoi['AOItype'] == 'Rectangle')]
-rectangle_aoi_df = rectangle_aoi_df.reset_index(drop=True)
+# rectangle_aoi_df = aoi[(aoi['AOItype'] == 'Rectangle')]
+# rectangle_aoi_df = rectangle_aoi_df.reset_index(drop=True)
 
-ellipse_aoi_df = aoi[(aoi['AOItype'] == 'Ellipse')]
-ellipse_aoi_df = ellipse_aoi_df.reset_index(drop=True)
+# ellipse_aoi_df = aoi[(aoi['AOItype'] == 'Ellipse')]
+# ellipse_aoi_df = ellipse_aoi_df.reset_index(drop=True)
 
-aoi_scalar = AOIScalar()
+# aoi_scalar = AOIScalar()
 
-### Refine coordinates for Rectangles
-rectangle_aoi_data = aoi_scalar.scale_rectangle_aoi(rectangle_aoi_df)
+# ### Refine coordinates for Rectangles
+# rectangle_aoi_data = aoi_scalar.scale_rectangle_aoi(rectangle_aoi_df)
 
-### Refine coordinates for Ellipses
-ellipse_aoi_data = aoi_scalar.scale_ellipse_aoi(ellipse_aoi_df)
+# ### Refine coordinates for Ellipses
+# ellipse_aoi_data = aoi_scalar.scale_ellipse_aoi(ellipse_aoi_df)
 
 # Create a empty list for data to compile
+valence_list = []
 image_number_list = []
 total_saccade_duration_list = []
 aoi_type_list = []
@@ -167,9 +162,10 @@ number_fixations_before_AOI_list = []
 
 for image in postDenoise_imageList:
 
-# Work with data relavant to single IAPS image at a time
-#image = postDenoise_imageList[4]
-#image = 3350
+
+	# Work with data relavant to single IAPS image at a time
+	#image = postDenoise_imageList[4]
+
 	print (image)
 	single_image_df = data_denoised.loc[data_denoised['image'] == image]
 
@@ -194,7 +190,6 @@ for image in postDenoise_imageList:
 	#single_image_df['CursorY'] = single_image_df['CursorY'].fillna(0)
 
 	#--------------------Denoising 3: Median Filtering per each IAPS--------------------
-
 	signal_denoisor = SignalDenoisor(median_with_max, max_blink_sec, sample_per_second, maximum_gap_duration, maximum_gap_threshold)
 
 	# Handles short (1-sample) dropouts and x & y values surrounding blinks
@@ -202,9 +197,9 @@ for image in postDenoise_imageList:
 
 	median_filtered_df = median_filtered_df.reindex(new_index_list, fill_value=np.nan)
 
-	# Create Offset values for QA purposes
-	median_filtered_df['raw_x_offset_column'] = median_filtered_df['CursorX'] + 30
-	median_filtered_df['raw_y_offset_column'] = median_filtered_df['CursorY'] + 30
+	# # Create Offset values for QA purposes
+	# median_filtered_df['raw_x_offset_column'] = median_filtered_df['CursorX'] + 30
+	# median_filtered_df['raw_y_offset_column'] = median_filtered_df['CursorY'] + 30
 
 	#--------------------Denoising4: Remove Blinks--------------------
 	# Blink range == 50 ~ 400ms
@@ -214,9 +209,9 @@ for image in postDenoise_imageList:
 
 	deblinked_df = signal_denoisor.remove_blinks(median_filtered_df)
 
-	# Create Offset values for QA purposes
-	deblinked_df['filtered_x_offset_column'] = deblinked_df['x_filtered'] + 30
-	deblinked_df['filtered_y_offset_column'] = deblinked_df['y_filtered'] + 30
+	# # Create Offset values for QA purposes
+	# deblinked_df['filtered_x_offset_column'] = deblinked_df['x_filtered'] + 30
+	# deblinked_df['filtered_y_offset_column'] = deblinked_df['y_filtered'] + 30
 
 	#--------------------Denoising5: Interpolate--------------------
 
@@ -239,6 +234,38 @@ for image in postDenoise_imageList:
 	saccade_df = saccade_detector.detect_missing_data(saccade_df)
 
 	saccade_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/saccade_data_{image}_{subject_number}.csv")
+
+	#--------------------Valence Data--------------------
+	valence_image_set = set(saccade_df['valence_x'].dropna())
+
+	if len(valence_image_set) == 1:
+		for valence in valence_image_set:
+			valence = valence
+	
+	#--------------------AOI data--------------------
+	aoi_reader = AOIReader()
+
+	aoi = aoi_reader.read_in_AOI(image)
+
+
+	if aoi.empty:
+		rectangle_aoi_data = aoi
+		ellipse_aoi_data = aoi
+
+	else:
+		rectangle_aoi_df = aoi[(aoi['AOItype'] == 'Rectangle')]
+		rectangle_aoi_df = rectangle_aoi_df.reset_index(drop=True)
+
+		ellipse_aoi_df = aoi[(aoi['AOItype'] == 'Ellipse')]
+		ellipse_aoi_df = ellipse_aoi_df.reset_index(drop=True)
+
+		aoi_scalar = AOIScalar()
+
+		### Refine coordinates for Rectangles
+		rectangle_aoi_data = aoi_scalar.scale_rectangle_aoi(rectangle_aoi_df)
+
+		### Refine coordinates for Ellipses
+		ellipse_aoi_data = aoi_scalar.scale_ellipse_aoi(ellipse_aoi_df)
 
 	#--------------------Detect Fixations--------------------
 	# Create dataFrame of only fixations
@@ -266,14 +293,26 @@ for image in postDenoise_imageList:
 	print ("total duration of fixations in IAPS {} : {}ms".format(image, total_duration_IAPS))
 	print ("")
 
+	valence_list.append(valence)
+	image_number_list.append(image)
+	total_saccade_duration_list.append(total_saccade_duration)
+	aoi_type_list.append("IAPS")
+	object_number_list.append("Object01")
+	time_to_first_fixation_list.append(time_at_first_fixation_in_IAPS)
+	first_fixation_duration_list.append(total_duration_IAPS)
+	number_fixations_list.append(total_number_fixations_in_IAPS)
+	total_in_AOI_list.append("N/A")
+	total_out_AOI_list.append("N/A")
+	number_fixations_before_AOI_list.append("N/A")
+
 	# --------------------Detect Fixations in AOI--------------------
 	gaze_compiler = GazeCompiler()
 
 	# Create dataFrame of Rectangle AOIs
 	single_rectangle_aoi_df = rectangle_aoi_data.loc[rectangle_aoi_data['image'] == image]
 
-	
-	#print (single_rectangle_aoi_df)
+
+	print (single_rectangle_aoi_df)
 
 
 	if single_rectangle_aoi_df.empty:
@@ -281,6 +320,7 @@ for image in postDenoise_imageList:
 		print ("")
 
 		# append only the image number
+		valence_list.append(valence)
 		image_number_list.append(image)
 		total_saccade_duration_list.append(total_saccade_duration)
 		aoi_type_list.append("N/A")
@@ -309,7 +349,8 @@ for image in postDenoise_imageList:
 				print ("=====AOI {}====".format(aoi_number))
 
 				#Combine fixation data with AOI data
-				merged = fixation_df.merge(single_rectangle_aoi_df.iloc[[aoi_counter]], how='left').set_index(fixation_df.index)
+				#merged = fixation_df.merge(single_rectangle_aoi_df.iloc[[aoi_counter]], how='left').set_index(fixation_df.index)
+				merged = fixation_df.merge(single_rectangle_aoi_df.iloc[[aoi_counter]], on=['image'])
 
 				# Clean X,Y gaze and coordinates
 				cleand_fixation_df = gaze_compiler.rectangle_clean_gaze_and_coordinate(merged)
@@ -321,6 +362,7 @@ for image in postDenoise_imageList:
 				if fixation_in_aoi_df.empty:
 					print ('No Fixation for {} {}'.format(image, aoi_number))
 					print ("")
+					valence_list.append(valence)
 					image_number_list.append(image)
 					total_saccade_duration_list.append(total_saccade_duration)
 					aoi_type_list.append("rectangle")
@@ -340,6 +382,7 @@ for image in postDenoise_imageList:
 					total_number_fixations_in_AOI, true_fixation_in_AOI_list = fixation_detector.detect_true_fixation(fixation_in_AOI_list)
 					total_duration_AOI = fixation_detector.compute_total_duration_fixation(true_fixation_in_AOI_list)
 
+					valence_list.append(valence)
 					image_number_list.append(image)
 					total_saccade_duration_list.append(total_saccade_duration)
 					aoi_type_list.append("rectangle")
@@ -428,7 +471,7 @@ for image in postDenoise_imageList:
 
 	### For Ellipse AOIs
 	single_ellipse_aoi_df = ellipse_aoi_data.loc[ellipse_aoi_data['image'] == image]
-
+	print (single_ellipse_aoi_df)
 	#print (single_ellipse_aoi_df)
 
 	if single_ellipse_aoi_df.empty:
@@ -436,6 +479,7 @@ for image in postDenoise_imageList:
 		print ("")
 
 		# append only the image number
+		valence_list.append(valence)
 		image_number_list.append(image)
 		total_saccade_duration_list.append(total_saccade_duration)
 		aoi_type_list.append("N/A")
@@ -466,7 +510,7 @@ for image in postDenoise_imageList:
 
 				#Combine fixation data with AOI data
 				#merged = pd.merge(fixation_df, single_ellipse_aoi_df.iloc[[aoi_counter]], on='image')
-				merged = fixation_df.merge(single_ellipse_aoi_df.iloc[[aoi_counter]], how='left').set_index(fixation_df.index)
+				merged = fixation_df.merge(single_ellipse_aoi_df.iloc[[aoi_counter]], on=['image'])#.set_index(fixation_df.index)
 
 				# Clean X,Y gaze and coordinates
 				cleaned_fixation_df = gaze_compiler.ellipse_clean_gaze_and_coordinate(merged)
@@ -484,6 +528,7 @@ for image in postDenoise_imageList:
 				if fixation_in_aoi_df.empty:
 					print ('No Fixation for {} {}'.format(image, single_ellipse_aoi_df.iloc[aoi_counter]['objectNumber']))
 					print ("")
+					valence_list.append(valence)
 					image_number_list.append(image)
 					total_saccade_duration_list.append(total_saccade_duration)
 					aoi_type_list.append("ellipse")
@@ -503,6 +548,7 @@ for image in postDenoise_imageList:
 					total_number_fixations_in_AOI, true_fixation_in_AOI_list = fixation_detector.detect_true_fixation(fixation_in_AOI_list)
 					total_duration_AOI = fixation_detector.compute_total_duration_fixation(true_fixation_in_AOI_list)
 
+					valence_list.append(valence)
 					image_number_list.append(image)
 					total_saccade_duration_list.append(total_saccade_duration)
 					aoi_type_list.append("ellipse")
@@ -578,6 +624,7 @@ for image in postDenoise_imageList:
 								print ("-----d.number of fixations before fixation on AOI: {}-----".format(number_fixations_before_AOI))
 								print ("")
 
+
 					else:
 						print ("no fixation longer than 60ms")
 
@@ -591,21 +638,23 @@ for image in postDenoise_imageList:
 					aoi_counter += 1
 		print ("")
 
+	print (len(valence_list))
+	print (len(image_number_list))
+	print (len(total_saccade_duration_list))
+	print (len(aoi_type_list))
+	print (len(object_number_list))
+	print (len(time_to_first_fixation_list))
+	print (len(first_fixation_duration_list))
+	print (len(number_fixations_list))
+	print (len(total_in_AOI_list))
+	print (len(total_out_AOI_list))
+	print (len(number_fixations_before_AOI_list))
 
-	# print (len(image_number_list))
-	# print (len(total_saccade_duration_list))
-	# print (len(aoi_type_list))
-	# print (len(object_number_list))
-	# print (len(time_to_first_fixation_list))
-	# print (len(first_fixation_duration_list))
-	# print (len(number_fixations_list))
-	# print (len(total_in_AOI_list))
-	# print (len(total_out_AOI_list))
-	# print (len(number_fixations_before_AOI_list))
 
 
 	analysis_df = pd.DataFrame(
 		{'IAPS_number':image_number_list,
+		'valence':valence_list,
 		'total_saccade_duration': total_saccade_duration_list,
 		'aoi_type':aoi_type_list,
 		'object_number':object_number_list,

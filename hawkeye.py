@@ -125,52 +125,52 @@ class AOIReader:
 	def __init__(self):
 		pass
 
-	def read_in_AOI(self, data_frame):
-		imageList = data_frame['image'].unique()
+	def read_in_AOI(self, image):
 		IAPSlist = []
 		coordinateList = []
 		objectNumList = []
 		noAOIlist = []
 
-		for image in imageList:
-			filePath = "/study/reference/public/IAPS/IAPS/IAPS_2008_1-20_800x600BMP/IAPS_2008_AOIs/%s.OBT"%(image)
+		#for image in imageList:
+		filePath = "/study/reference/public/IAPS/IAPS/IAPS_2008_1-20_800x600BMP/IAPS_2008_AOIs/%s.OBT"%(image)
 
 
 			#parser = re.compile(r"[^=]+=(\d+), (\d+), (\d+), (\d+), (\d+)")
 
 			#IAPSnumb = filePath[-8:-4]
-			try:
-				with open(filePath, 'rU') as f:
-					for line in f:
-						a = line.split('=')
-						if len(a) > 1 and a[1] != "0\n":
-							objectNum = a[0]
-							objectCoordinate = a[1][:-10]
-			
-							IAPSlist.append(image)
-							coordinateList.append(objectCoordinate)
-							objectNumList.append(objectNum)
+		try:
+			with open(filePath, 'rU') as f:
+				for line in f:
+					a = line.split('=')
+					if len(a) > 1 and a[1] != "0\n":
+						objectNum = a[0]
+						objectCoordinate = a[1][:-10]
+		
+						IAPSlist.append(image)
+						coordinateList.append(objectCoordinate)
+						objectNumList.append(objectNum)
 
-				df1 = pd.DataFrame(IAPSlist, columns=['image'])
-				df2 = pd.DataFrame(coordinateList, columns=['coordinate'])
-				df3 = pd.DataFrame(objectNumList, columns=['objectNumber'])
-				df4 = pd.concat([df1, df2], axis=1)
-				df5 = pd.concat([df4, df3], axis=1)
+			df1 = pd.DataFrame(IAPSlist, columns=['image'])
+			df2 = pd.DataFrame(coordinateList, columns=['coordinate'])
+			df3 = pd.DataFrame(objectNumList, columns=['objectNumber'])
+			df4 = pd.concat([df1, df2], axis=1)
+			df5 = pd.concat([df4, df3], axis=1)
 
-			except OSError as e:
-				print ("no AOI for %s"%(image))
-				noAOIlist.append(image)
+			# Drop coordinates that indicate grid (object01)
+			final_df = df5[df5.objectNumber.str.contains("Object01") == False].reset_index()
 
-		# Drop coordinates that indicate grid (object01)
-		final_df = df5[df5.objectNumber.str.contains("Object01") == False].reset_index()
+			# Fetch AOI type information and recode 
+			final_df['AOItype'] = final_df.coordinate.str[:1]
+			final_df['AOItype'] = final_df['AOItype'].replace(['1'], 'Rectangle')
+			final_df['AOItype'] = final_df['AOItype'].replace(['2'], 'Ellipse')
 
+		except OSError as e:
+			print ("no AOI for %s"%(image))
+			noAOIlist.append(image)
+			# Create a dummy dataframe
+			final_df = pd.DataFrame(columns=['index', 'image', 'coordinate', 'objectNumber', 'AOItype', 'Xcenter', 'Ycenter', 'Height', 'Width'])
 
-		# Fetch AOI type information and recode 
-		final_df['AOItype'] = final_df.coordinate.str[:1]
-		final_df['AOItype'] = final_df['AOItype'].replace(['1'], 'Rectangle')
-		final_df['AOItype'] = final_df['AOItype'].replace(['2'], 'Ellipse')
-
-		return (final_df)
+		return final_df
 
 class AOIScalar:
 
@@ -240,7 +240,9 @@ class AOIScalar:
 		# Resample AOI data to 1024 x 1280
 		ellipse_aoi_data['Xcenter'] = (ellipse_aoi_data['Xcenter'] * 1280) / 800
 		ellipse_aoi_data['Width'] = (ellipse_aoi_data['Width'] * 1280) / 800
-		ellipse_aoi_data['Ycenter'] = (ellipse_aoi_data['Ycenter'] * 1024) / 600
+
+		ellipse_aoi_data['Ycenter'] = (600 - ellipse_aoi_data['Ycenter'])
+		ellipse_aoi_data['Ycenter'] = ((ellipse_aoi_data['Ycenter'] * 1024) / 600)
 		ellipse_aoi_data['Height'] = (ellipse_aoi_data['Height'] * 1024) / 600
 
 		final_df = ellipse_aoi_data
@@ -516,57 +518,68 @@ class GazeCompiler:
 
 	def rectangle_clean_gaze_and_coordinate(self, data_frame):
 		# Clean X gaze
-		data_frame['x_deblinked'] = data_frame['x_deblinked'].astype(float)
+		data_frame['x_interpolated'] = data_frame['x_interpolated'].astype(float)
 		data_frame['Xmax'] = data_frame['Xmax'].astype(float)
 		data_frame['Xmin'] = data_frame['Xmin'].astype(float)
-		#data_frame = data_frame.dropna(subset=['x_deblinked'])
+		#data_frame = data_frame.dropna(subset=['x_interpolated'])
 		
 		# Clen Y gaze
-		data_frame['y_deblinked'] = data_frame['y_deblinked'].astype(float)
+		data_frame['y_interpolated'] = data_frame['y_interpolated'].astype(float)
 		data_frame['Ymax'] = data_frame['Ymax'].astype(float)
 		data_frame['Ymin'] = data_frame['Ymin'].astype(float)
-		#data_frame = data_frame.dropna(subset=['y_deblinked'])
+		#data_frame = data_frame.dropna(subset=['y_interpolated'])
 
 		final_df = data_frame
 		return (final_df)
 
 	def rectangle_compute_gaze_in_AOI(self, data_frame):
-		final_df = data_frame[(data_frame['x_deblinked'] > data_frame['Xmin']) & (data_frame['x_deblinked'] < data_frame['Xmax']) & (data_frame['y_deblinked'] > data_frame['Ymin']) & (data_frame['y_deblinked'] < data_frame['Ymax'])]
+		final_df = data_frame[(data_frame['x_interpolated'] > data_frame['Xmin']) & (data_frame['x_interpolated'] < data_frame['Xmax']) & (data_frame['y_interpolated'] > data_frame['Ymin']) & (data_frame['y_interpolated'] < data_frame['Ymax'])]
 		
 		return (final_df)
 
 	def ellipse_clean_gaze_and_coordinate(self, data_frame):
 		# Clean X gaze
-		data_frame['x_deblinked'] = data_frame['x_deblinked'].astype(float)
+		data_frame['x_interpolated'] = data_frame['x_interpolated'].astype(float)
 		data_frame['Xcenter'] = data_frame['Xcenter'].astype(float)
 		data_frame['Width'] = data_frame['Width'].astype(float)
-		#data_frame = data_frame.dropna(subset=['x_deblinked'])
+		#data_frame = data_frame.dropna(subset=['x_interpolated'])
 		
 		# Clen Y gaze
-		data_frame['y_deblinked'] = data_frame['y_deblinked'].astype(float)
+		data_frame['y_interpolated'] = data_frame['y_interpolated'].astype(float)
 		data_frame['Ycenter'] = data_frame['Ycenter'].astype(float)
 		data_frame['Height'] = data_frame['Height'].astype(float)
-		#data_frame = data_frame.dropna(subset=['y_deblinked'])
+		#data_frame = data_frame.dropna(subset=['y_interpolated'])
 
 		final_df = data_frame
 		return (final_df)
 
 	def ellipse_compute_gaze_in_AOI(self, data_frame):
+		import math
 		ellipse_point_list = []
 		for index, row in data_frame.iterrows():
-			Xcoordinate = row['x_deblinked']
-			Ycoordinate = row['y_deblinked']
-			Xcenter = row['Xcenter']
-			Ycenter = row['Ycenter']
-			width = row['Width']
-			height = row['Height']
 
-			dx = Xcenter - Xcoordinate
-			dy = Ycenter - Ycoordinate
+			x = row['x_interpolated']
+			y = row['y_interpolated']
+			h = row['Xcenter']
+			k = row['Ycenter']
+			a = row['Width']
+			b = row['Height']
 
-			point = (( dx * dx ) / ( width * width )) + (( dy * dy ) / ( height * height ))
+			p = ((math.pow((x - h), 2) // math.pow(a, 2)) + (math.pow((y - k), 2) // math.pow(b, 2))) 
+
+			# Xcoordinate = row['x_interpolated']
+			# Ycoordinate = row['y_interpolated']
+			# Xcenter = row['Xcenter']
+			# Ycenter = row['Ycenter']
+			# width = row['Width']
+			# height = row['Height']
+
+			# dx = Xcenter - Xcoordinate
+			# dy = Ycenter - Ycoordinate
+
+			# point = (( dx * dx ) / ( width * width )) + (( dy * dy ) / ( height * height ))
 			
-			ellipse_point_list.append(point)
+			ellipse_point_list.append(p)
 		
 		df = pd.DataFrame({'ellipse_value':ellipse_point_list})
 		final_df = pd.concat([data_frame, df], axis=1)
