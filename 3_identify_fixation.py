@@ -145,6 +145,7 @@ print ("=====Percent Good Data for subject {}: {}% (Out of 4s picture onset time
 # ellipse_aoi_data = aoi_scalar.scale_ellipse_aoi(ellipse_aoi_df)
 
 # Create a empty list for data to compile
+subject_number_list = []
 valence_list = []
 image_number_list = []
 total_saccade_duration_list = []
@@ -284,8 +285,13 @@ for image in postDenoise_imageList:
 	total_duration_IAPS = fixation_detector.compute_total_duration_fixation(true_fixation_in_IAPS_list)
 
 	# time to first fixation on IAPS
-	first_fixation_in_IAPS_index = true_fixation_in_IAPS_list[0]
-	time_at_first_fixation_in_IAPS = round(first_fixation_in_IAPS_index[0] * one_sample_time, 2)
+	if len(true_fixation_in_IAPS_list) >= 1:
+		first_fixation_in_IAPS_index = true_fixation_in_IAPS_list[0]
+		time_at_first_fixation_in_IAPS = round(first_fixation_in_IAPS_index[0] * one_sample_time, 2)
+
+	else:
+		first_fixation_in_IAPS_index = 0
+		time_at_first_fixation_in_IAPS = 0
 
 	print ("==========Fixation on IAPS=========")
 	print ("first fixating on IAPS at {}ms".format(time_at_first_fixation_in_IAPS))
@@ -293,6 +299,7 @@ for image in postDenoise_imageList:
 	print ("total duration of fixations in IAPS {} : {}ms".format(image, total_duration_IAPS))
 	print ("")
 
+	subject_number_list.append(subject_number)
 	valence_list.append(valence)
 	image_number_list.append(image)
 	total_saccade_duration_list.append(total_saccade_duration)
@@ -320,6 +327,7 @@ for image in postDenoise_imageList:
 		print ("")
 
 		# append only the image number
+		subject_number_list.append(subject_number)
 		valence_list.append(valence)
 		image_number_list.append(image)
 		total_saccade_duration_list.append(total_saccade_duration)
@@ -362,6 +370,7 @@ for image in postDenoise_imageList:
 				if fixation_in_aoi_df.empty:
 					print ('No Fixation for {} {}'.format(image, aoi_number))
 					print ("")
+					subject_number_list.append(subject_number)
 					valence_list.append(valence)
 					image_number_list.append(image)
 					total_saccade_duration_list.append(total_saccade_duration)
@@ -382,6 +391,7 @@ for image in postDenoise_imageList:
 					total_number_fixations_in_AOI, true_fixation_in_AOI_list = fixation_detector.detect_true_fixation(fixation_in_AOI_list)
 					total_duration_AOI = fixation_detector.compute_total_duration_fixation(true_fixation_in_AOI_list)
 
+					subject_number_list.append(subject_number)
 					valence_list.append(valence)
 					image_number_list.append(image)
 					total_saccade_duration_list.append(total_saccade_duration)
@@ -479,6 +489,7 @@ for image in postDenoise_imageList:
 		print ("")
 
 		# append only the image number
+		subject_number_list.append(subject_number)
 		valence_list.append(valence)
 		image_number_list.append(image)
 		total_saccade_duration_list.append(total_saccade_duration)
@@ -528,6 +539,7 @@ for image in postDenoise_imageList:
 				if fixation_in_aoi_df.empty:
 					print ('No Fixation for {} {}'.format(image, single_ellipse_aoi_df.iloc[aoi_counter]['objectNumber']))
 					print ("")
+					subject_number_list.append(subject_number)
 					valence_list.append(valence)
 					image_number_list.append(image)
 					total_saccade_duration_list.append(total_saccade_duration)
@@ -548,6 +560,7 @@ for image in postDenoise_imageList:
 					total_number_fixations_in_AOI, true_fixation_in_AOI_list = fixation_detector.detect_true_fixation(fixation_in_AOI_list)
 					total_duration_AOI = fixation_detector.compute_total_duration_fixation(true_fixation_in_AOI_list)
 
+					subject_number_list.append(subject_number)
 					valence_list.append(valence)
 					image_number_list.append(image)
 					total_saccade_duration_list.append(total_saccade_duration)
@@ -638,6 +651,7 @@ for image in postDenoise_imageList:
 					aoi_counter += 1
 		print ("")
 
+	print (len(subject_number_list))
 	print (len(valence_list))
 	print (len(image_number_list))
 	print (len(total_saccade_duration_list))
@@ -653,7 +667,8 @@ for image in postDenoise_imageList:
 
 
 	analysis_df = pd.DataFrame(
-		{'IAPS_number':image_number_list,
+		{'subject_number':subject_number_list,
+		'IAPS_number':image_number_list,
 		'valence':valence_list,
 		'total_saccade_duration': total_saccade_duration_list,
 		'aoi_type':aoi_type_list,
@@ -669,7 +684,7 @@ for image in postDenoise_imageList:
 	analysis_df_cleaned = analysis_df[analysis_df.aoi_type != "N/A"]
 
 	#print (analysis_df)
-	analysis_df_cleaned.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_fixation_compiled.csv".format(subject_number, subject_number))
+	analysis_df_cleaned.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_fixation_compiled.csv".format(subject_number, subject_number), index=False)
 
 	
 # print ("processing for %s complete without error"%(subject_number))
