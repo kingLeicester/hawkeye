@@ -145,6 +145,19 @@ print ("=====Percent Good Data for subject {}: {}% (Out of 4s picture onset time
 # ellipse_aoi_data = aoi_scalar.scale_ellipse_aoi(ellipse_aoi_df)
 
 # Create a empty list for data to compile
+percent_good_data_list = []
+sampling_rate_list = []
+
+subject_list = []
+iaps_list = []
+total_list = []
+number_interpolated_list = []
+number_original_list = []
+number_missing_list = []
+ratio_interpolated_list = []
+ratio_original_list = []
+ratio_missing_list = []
+
 subject_number_list = []
 valence_list = []
 image_number_list = []
@@ -164,8 +177,8 @@ number_fixations_before_AOI_list = []
 for image in postDenoise_imageList:
 
 
-	# Work with data relavant to single IAPS image at a time
-	#image = postDenoise_imageList[4]
+# Work with data relavant to single IAPS image at a time
+#image = postDenoise_imageList[4]
 
 	print (image)
 	single_image_df = data_denoised.loc[data_denoised['image'] == image]
@@ -217,8 +230,9 @@ for image in postDenoise_imageList:
 	#--------------------Denoising5: Interpolate--------------------
 
 	interpolated_df = signal_denoisor.interpolate(deblinked_df)
-	total_number_samples, number_interpolated, number_original, number_missing = signal_denoisor.compute_interpolation_ratio(interpolated_df)
 
+
+	total_number_samples, number_interpolated, number_original, number_missing = signal_denoisor.compute_interpolation_ratio(interpolated_df)
 	if number_interpolated + number_original + number_missing == total_number_samples:
 			print ("number of data checks out")
 			missing_data_ratio = round((number_missing/total_number_samples) * 100, 2)
@@ -227,11 +241,22 @@ for image in postDenoise_imageList:
 			print (f"percent missing data :{missing_data_ratio}% ({number_missing}/{total_number_samples})")
 			print (f"percent interpolated data :{interpolated_data_ratio}% ({number_interpolated}/{total_number_samples})")
 			print (f"percent origianl data :{original_data_ratio}% ({number_original}/{total_number_samples})")
+			
+			subject_list.append(subject_number)
+			percent_good_data_list.append(percent_good_data_subject)
+			sampling_rate_list.append(sample_per_second)
+			iaps_list.append(image)
+			total_list.append(total_number_samples)
+			number_interpolated_list.append(number_interpolated)
+			number_original_list.append(number_original)
+			number_missing_list.append(number_missing) 
+			ratio_interpolated_list.append(interpolated_data_ratio)
+			ratio_original_list.append(original_data_ratio)
+			ratio_missing_list.append(missing_data_ratio)
 
 	else:
 		print ("number of data does NOT check out, check you math!")
-		
-	exit()
+
 	#--------------------Detect Saccades--------------------
 	saccade_detector = SaccadeDetector(sample_per_second)
 
@@ -255,7 +280,7 @@ for image in postDenoise_imageList:
 	if len(valence_image_set) == 1:
 		for valence in valence_image_set:
 			valence = valence
-	
+
 	#--------------------AOI data--------------------
 	aoi_reader = AOIReader()
 
@@ -294,6 +319,13 @@ for image in postDenoise_imageList:
 	# subset to true fixations longer than minimum threshold 60ms
 	total_number_fixations_in_IAPS, true_fixation_in_IAPS_list = fixation_detector.detect_true_fixation(fixation_in_IAPS_list)
 
+
+	# create  dataframe of only true fixations
+	true_fixation_labeld_df = fixation_detector.compute_final_data_type(true_fixation_in_IAPS_list, saccade_df)
+	true_fixation_labeld_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/true_fixation_{image}_{subject_number}.csv")
+
+	true_fixation_df = true_fixation_labeld_df.loc[true_fixation_labeld_df['final_data_type'] == "true_fixation"]
+
 	# duration of all fixations
 	total_duration_IAPS = fixation_detector.compute_total_duration_fixation(true_fixation_in_IAPS_list)
 
@@ -301,10 +333,13 @@ for image in postDenoise_imageList:
 	if len(true_fixation_in_IAPS_list) >= 1:
 		first_fixation_in_IAPS_index = true_fixation_in_IAPS_list[0]
 		time_at_first_fixation_in_IAPS = round(first_fixation_in_IAPS_index[0] * one_sample_time, 2)
+		first_fixation_in_IAPS_duration = round(len(first_fixation_in_IAPS_index) * one_sample_time, 2)
 
 	else:
-		first_fixation_in_IAPS_index = 0
-		time_at_first_fixation_in_IAPS = 0
+		first_fixation_in_IAPS_index = "N/A"
+		time_at_first_fixation_in_IAPS = "N/A"
+		first_fixation_in_IAPS_duration = "N/A"
+
 
 	print ("==========Fixation on IAPS=========")
 	print ("first fixating on IAPS at {}ms".format(time_at_first_fixation_in_IAPS))
@@ -319,9 +354,9 @@ for image in postDenoise_imageList:
 	aoi_type_list.append("IAPS")
 	object_number_list.append("Object01")
 	time_to_first_fixation_list.append(time_at_first_fixation_in_IAPS)
-	first_fixation_duration_list.append(total_duration_IAPS)
+	first_fixation_duration_list.append(first_fixation_in_IAPS_duration)
 	number_fixations_list.append(total_number_fixations_in_IAPS)
-	total_in_AOI_list.append("N/A")
+	total_in_AOI_list.append(total_duration_IAPS)
 	total_out_AOI_list.append("N/A")
 	number_fixations_before_AOI_list.append("N/A")
 
@@ -371,7 +406,7 @@ for image in postDenoise_imageList:
 
 				#Combine fixation data with AOI data
 				#merged = fixation_df.merge(single_rectangle_aoi_df.iloc[[aoi_counter]], how='left').set_index(fixation_df.index)
-				merged = fixation_df.merge(single_rectangle_aoi_df.iloc[[aoi_counter]], on=['image'])
+				merged = true_fixation_df.merge(single_rectangle_aoi_df.iloc[[aoi_counter]], on=['image'])
 
 				# Clean X,Y gaze and coordinates
 				cleand_fixation_df = gaze_compiler.rectangle_clean_gaze_and_coordinate(merged)
@@ -534,7 +569,7 @@ for image in postDenoise_imageList:
 
 				#Combine fixation data with AOI data
 				#merged = pd.merge(fixation_df, single_ellipse_aoi_df.iloc[[aoi_counter]], on='image')
-				merged = fixation_df.merge(single_ellipse_aoi_df.iloc[[aoi_counter]], on=['image'])#.set_index(fixation_df.index)
+				merged = true_fixation_df.merge(single_ellipse_aoi_df.iloc[[aoi_counter]], on=['image'])#.set_index(fixation_df.index)
 
 				# Clean X,Y gaze and coordinates
 				cleaned_fixation_df = gaze_compiler.ellipse_clean_gaze_and_coordinate(merged)
@@ -542,7 +577,6 @@ for image in postDenoise_imageList:
 				#print (row['x_deblinked'], row['y_deblinked'], row['Xcenter'], row['Ycenter'], row['Width'], row['Height'])
 				fixation_in_aoi_df = gaze_compiler.ellipse_compute_gaze_in_AOI(cleaned_fixation_df)
 
-				#print (fixation_in_aoi_df)
 				
 				#print (merged.dtypes)
 				#merged = merged[(merged['x_deblinked'] > merged['Xmin']) & (merged['x_deblinked'] < merged['Xmax']) & (merged['y_deblinked'] > merged['Ymin']) & (merged['y_deblinked'] < merged['Ymax'])]
@@ -681,7 +715,7 @@ for image in postDenoise_imageList:
 
 	analysis_df = pd.DataFrame(
 		{'subject_number':subject_number_list,
-		'IAPS_number':image_number_list,
+		'iaps_number':image_number_list,
 		'valence':valence_list,
 		'total_saccade_duration': total_saccade_duration_list,
 		'aoi_type':aoi_type_list,
@@ -699,9 +733,25 @@ for image in postDenoise_imageList:
 	#print (analysis_df)
 	analysis_df_cleaned.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_fixation_compiled.csv".format(subject_number, subject_number), index=False)
 
-	
-# print ("processing for %s complete without error"%(subject_number))
-# #single_image_df.to_csv("/home/slee/Desktop/eye_sample.csv")
-# #print (single_image_df)
+
+	print ("compiling")
+
+	data_type_df = pd.DataFrame(
+		{'subject_number':subject_list,
+		'sampling_rate': sampling_rate_list,
+		'percent_good_data': percent_good_data_list,
+		'iaps_number': iaps_list,
+		'total_samples':total_list,
+		'number_interpolated':number_interpolated_list,
+		'number_original': number_original_list,
+		'number_missing':number_missing_list,
+		'percent_interpolated':ratio_interpolated_list,
+		'percent_original': ratio_original_list,
+		'percent_missing':ratio_missing_list})
+
+	data_type_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/{subject_number}_data_type_compiled.csv", index=False)
+	# print ("processing for %s complete without error"%(subject_number))
+	# #single_image_df.to_csv("/home/slee/Desktop/eye_sample.csv")
+	# #print (single_image_df)
 
 
