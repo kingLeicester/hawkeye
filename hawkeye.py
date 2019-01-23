@@ -377,18 +377,19 @@ class SignalDenoisor:
 		number_original = sum(int(num) == 0 for num in consecutive_list)
 		number_missing = sum(int(num) > self.maximum_gap_threshold for num in consecutive_list)
 
-		if number_interpolated + number_original + number_missing == total_number_samples:
-			print ("number of data checks out")
-			missing_data_ratio = round((number_missing/total_number_samples) * 100, 2)
-			interpolated_data_ratio = round((number_interpolated/total_number_samples) * 100, 2)
-			original_data_ratio = round((number_original/total_number_samples) * 100, 2)
-			print (f"percent missing data :{missing_data_ratio}% ({number_missing}/{total_number_samples})")
-			print (f"percent interpolated data :{interpolated_data_ratio}% ({number_interpolated}/{total_number_samples})")
-			print (f"percent origianl data :{original_data_ratio}% ({number_original}/{total_number_samples})")
+		# if number_interpolated + number_original + number_missing == total_number_samples:
+		# 	print ("number of data checks out")
+		# 	missing_data_ratio = round((number_missing/total_number_samples) * 100, 2)
+		# 	interpolated_data_ratio = round((number_interpolated/total_number_samples) * 100, 2)
+		# 	original_data_ratio = round((number_original/total_number_samples) * 100, 2)
+		# 	print (f"percent missing data :{missing_data_ratio}% ({number_missing}/{total_number_samples})")
+		# 	print (f"percent interpolated data :{interpolated_data_ratio}% ({number_interpolated}/{total_number_samples})")
+		# 	print (f"percent origianl data :{original_data_ratio}% ({number_original}/{total_number_samples})")
 
-		else:
-			print ("number of data does NOT check out, check you math!")
+		# else:
+		# 	print ("number of data does NOT check out, check you math!")
 			
+		return (total_number_samples, number_interpolated, number_original, number_missing)
 
 class SaccadeDetector:
 

@@ -217,8 +217,21 @@ for image in postDenoise_imageList:
 	#--------------------Denoising5: Interpolate--------------------
 
 	interpolated_df = signal_denoisor.interpolate(deblinked_df)
-	signal_denoisor.compute_interpolation_ratio(interpolated_df)
+	total_number_samples, number_interpolated, number_original, number_missing = signal_denoisor.compute_interpolation_ratio(interpolated_df)
 
+	if number_interpolated + number_original + number_missing == total_number_samples:
+			print ("number of data checks out")
+			missing_data_ratio = round((number_missing/total_number_samples) * 100, 2)
+			interpolated_data_ratio = round((number_interpolated/total_number_samples) * 100, 2)
+			original_data_ratio = round((number_original/total_number_samples) * 100, 2)
+			print (f"percent missing data :{missing_data_ratio}% ({number_missing}/{total_number_samples})")
+			print (f"percent interpolated data :{interpolated_data_ratio}% ({number_interpolated}/{total_number_samples})")
+			print (f"percent origianl data :{original_data_ratio}% ({number_original}/{total_number_samples})")
+
+	else:
+		print ("number of data does NOT check out, check you math!")
+		
+	exit()
 	#--------------------Detect Saccades--------------------
 	saccade_detector = SaccadeDetector(sample_per_second)
 
