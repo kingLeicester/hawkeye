@@ -508,7 +508,8 @@ class FixationDetector:
 			print (start, end)
 			
 			data_frame.loc[start:end,'final_data_type'] = 'true_fixation'
-
+			data_frame.loc[(data_frame['saccade_interval'] == "saccade") & (data_frame['final_data_type'] != "saccade"), 'final_data_type'] = "saccade"
+		
 		return (data_frame)
 
 	# Takes a nested list of indices (fixations) and returns total duration of all fixations

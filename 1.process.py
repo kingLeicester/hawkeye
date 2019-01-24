@@ -305,7 +305,7 @@ for image in postDenoise_imageList:
 	# Create Plotsplt.suptitle('subject%s %s'%(subject_number, image))
 	os.makedirs('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}'.format(subject_number), exist_ok = True)
 	print ("creating saccade plot for {}".format(image))
-	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_4.saccade.png'.format(subject_number, subject_number, image))
+	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_5.saccade.png'.format(subject_number, subject_number, image))
 	
 	#--------------------Detect Fixations--------------------
 

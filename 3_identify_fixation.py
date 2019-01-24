@@ -366,8 +366,8 @@ for image in postDenoise_imageList:
 	# Create dataFrame of Rectangle AOIs
 	single_rectangle_aoi_df = rectangle_aoi_data.loc[rectangle_aoi_data['image'] == image]
 
-
-	print (single_rectangle_aoi_df)
+	# print last 4 columns (coordinates)
+	print (single_rectangle_aoi_df[single_rectangle_aoi_df.columns[-4:]])
 
 
 	if single_rectangle_aoi_df.empty:
@@ -529,8 +529,9 @@ for image in postDenoise_imageList:
 
 	### For Ellipse AOIs
 	single_ellipse_aoi_df = ellipse_aoi_data.loc[ellipse_aoi_data['image'] == image]
-	print (single_ellipse_aoi_df)
-	#print (single_ellipse_aoi_df)
+
+	# print last 4 columns (coordinates)
+	print (single_ellipse_aoi_df[single_ellipse_aoi_df.columns[-4:]])
 
 	if single_ellipse_aoi_df.empty:
 		print ('No Ellipse AOI for {}'.format(image))
