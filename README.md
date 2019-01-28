@@ -29,6 +29,7 @@ Before executing programs, ALWWAYS check & resupply:
 	- reads in pre-determined AOI information
 	- computes the grid information of each AOI (rectangle and/or ellipse)
 	- compiles:
+		
 		-a. Initial fixation time on an AOI
 		-b. Fixation duration of initial fixation on an AOI
 		-c1. Total fixation duration on an AOI
