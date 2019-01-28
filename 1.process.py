@@ -53,7 +53,7 @@ subject_number = sys.argv[1]
 
 coordinate_limits = (0, 1280)
 sample_limits = (0, 500)
-median_with_max = 1.0 / 20
+median_width_max = 1.0 / 20
 max_blink_sec = 0.4
 minimum_fixation_duration = 60
 maximum_gap_duration = 75
@@ -194,7 +194,7 @@ for image in postDenoise_imageList:
 	#single_image_df['CursorY'] = single_image_df['CursorY'].fillna(0)
 
 	#--------------------Denoising 3: Median Filtering per each IAPS--------------------
-	signal_denoisor = SignalDenoisor(median_with_max, max_blink_sec, sample_per_second, maximum_gap_duration, maximum_gap_threshold)
+	signal_denoisor = SignalDenoisor(median_width_max, max_blink_sec, sample_per_second, maximum_gap_duration, maximum_gap_threshold)
 	# Handles short (1-sample) dropouts and x & y values surrounding blinks
 	median_filtered_df = signal_denoisor.meidan_filter(single_image_df)
 
