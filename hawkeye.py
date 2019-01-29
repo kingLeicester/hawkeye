@@ -2,10 +2,10 @@
 
 __author__ = "David Lee"
 __credits__ = ["David Lee", "Nate Vack"]
-__version__ = "1.0"
+__version__ = "1.0.1"
 __maintainer__ = "David Lee"
 __email__ = "david.s.lee@wisc.edu"
-__status__ = "Production"
+__status__ = "In Use"
 
 
 import pandas as pd
