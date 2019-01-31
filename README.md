@@ -5,13 +5,13 @@ The repository contains a Python module (hawkeye.py) for processing, quality ass
 Usage: 
 
 Before executing programs, ALWAYS check & resupply:
-	- coordinate_limits
-	- sample_limits
-	- median_width_max
-	- max_blink_sec
-	- minimum_fixation_duration
-	- maximum_gap_duration
-	- check filepaths 
+- coordinate_limits
+- sample_limits
+- median_width_max
+- max_blink_sec
+- minimum_fixation_duration
+- maximum_gap_duration
+- check filepaths 
 
 0. Source dependancies.sh
 	- directs to an approporiate Python3 enviornmenet 
