@@ -4,7 +4,7 @@ The repository contains a Python module (hawkeye.py) for processing, quality ass
 
 Usage: 
 
-Before executing programs, ALWWAYS check & resupply:
+Before executing programs, ALWAYS check & resupply:
 	- coordinate_limits
 	- sample_limits
 	- median_width_max
