@@ -37,6 +37,7 @@ Before executing programs, ALWAYS check & resupply:
 		-d. Number of fixations before fixating on an AOI
 		-e. percent valid data per subject
 		-f. ratio of original:missing:interpolated data for each stimuli
+		
 	- produces separate datafiles(.csv) for (a-d) and (e,f)
 
 
