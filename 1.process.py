@@ -193,6 +193,24 @@ for image in postDenoise_imageList:
 	#single_image_df['CursorX'] = single_image_df['CursorX'].fillna(0)
 	#single_image_df['CursorY'] = single_image_df['CursorY'].fillna(0)
 
+	# Plot Raw Data
+	#coordinate_limits = (0, 1280)
+	fig = plt.figure(figsize=(14, 4))
+	plt.ylim(coordinate_limits)
+	plt.xlim(sample_limits)
+	plt.xticks(np.arange(0, 500, 25))
+	fig.suptitle('subject%s %s Raw Data'%(subject_number, image))
+	plt.ylabel("Coordinates")
+	plt.xlabel("# Samples")
+	plt.plot(single_image_df['CursorX'], 'b', alpha=0.8)
+	plt.plot(single_image_df['CursorY'], 'r', alpha=0.8)
+	plt.legend(['raw_X','raw_Y'], loc='upper left')
+	#plt.show()
+	
+	os.makedirs('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/'.format(subject_number), exist_ok = True)
+	print ("creating raw data plot for {}".format(image))
+	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_0.raw_data.png'.format(subject_number, subject_number, image))
+
 	#--------------------Denoising 3: Median Filtering per each IAPS--------------------
 	signal_denoisor = SignalDenoisor(median_width_max, max_blink_sec, sample_per_second, maximum_gap_duration, maximum_gap_threshold)
 	# Handles short (1-sample) dropouts and x & y values surrounding blinks
@@ -213,10 +231,10 @@ for image in postDenoise_imageList:
 	fig.suptitle('subject%s %s Denoise 1: Median Filtered'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
-	plt.plot(median_filtered_df['raw_x_offset_column'], 'k', alpha=0.5)
-	plt.plot(median_filtered_df['x_filtered'], 'b', alpha=0.5)
-	plt.plot(median_filtered_df['raw_y_offset_column'], 'g', alpha=0.5)
-	plt.plot(median_filtered_df['y_filtered'], 'y', alpha=0.5)
+	plt.plot(median_filtered_df['raw_x_offset_column'], 'c', alpha=0.5)
+	plt.plot(median_filtered_df['x_filtered'], 'b', alpha=0.8)
+	plt.plot(median_filtered_df['raw_y_offset_column'], 'm', alpha=0.5)
+	plt.plot(median_filtered_df['y_filtered'], 'r', alpha=0.8)
 	plt.legend(['raw_X', 'filtered_X', 'raw_Y', 'filtered_Y'], loc='upper left')
 	#plt.show()
 	
@@ -244,10 +262,10 @@ for image in postDenoise_imageList:
 	fig.suptitle('subject%s %s Denoise 2: Deblinked'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
-	plt.plot(deblinked_df['filtered_x_offset_column'], color='k', alpha=0.5)
-	plt.plot(deblinked_df['x_deblinked'], color='b', alpha=0.5)
-	plt.plot(deblinked_df['filtered_y_offset_column'], color='g', alpha=0.5)
-	plt.plot(deblinked_df['y_deblinked'], color='y', alpha=0.5)
+	plt.plot(deblinked_df['filtered_x_offset_column'], color='c', alpha=0.5)
+	plt.plot(deblinked_df['x_deblinked'], color='b', alpha=0.8)
+	plt.plot(deblinked_df['filtered_y_offset_column'], color='m', alpha=0.5)
+	plt.plot(deblinked_df['y_deblinked'], color='r', alpha=0.8)
 	plt.legend(['filtered_X', 'deblinked_X', 'filtered_Y', 'deblinked_Y'], loc='upper left')
 	#plt.show()
 	
@@ -260,6 +278,9 @@ for image in postDenoise_imageList:
 	interpolated_df = signal_denoisor.interpolate(deblinked_df)
 	signal_denoisor.compute_interpolation_ratio(interpolated_df)
 
+	interpolated_df['deblinked_x_offset_column'] = interpolated_df['x_deblinked'] + 30
+	interpolated_df['deblinked_y_offset_column'] = interpolated_df['y_deblinked'] + 30
+
 	# Plot deblinked
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
@@ -268,8 +289,10 @@ for image in postDenoise_imageList:
 	fig.suptitle('subject%s %s Denoise 3: Interpolated'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
-	plt.plot(interpolated_df['x_interpolated'], color='b', alpha=0.5)
-	plt.plot(interpolated_df['y_interpolated'], color='y', alpha=0.5)
+	plt.plot(interpolated_df['deblinked_x_offset_column'], color='c', alpha=0.5)
+	plt.plot(interpolated_df['x_interpolated'], color='b', alpha=0.8)
+	plt.plot(interpolated_df['deblinked_y_offset_column'], color='m', alpha=0.5)
+	plt.plot(interpolated_df['y_interpolated'], color='r', alpha=0.8)
 	plt.legend(['interpolated_X', 'interpolated_Y'], loc='upper left')
 	#plt.show()
 	
@@ -290,10 +313,10 @@ for image in postDenoise_imageList:
 	plt.ylim(coordinate_limits)
 	plt.xlim(sample_limits)
 	plt.xticks(np.arange(0, 500, 25))
-	plt.plot(saccade_df['x_interpolated'], color='k', alpha=0.8)
-	plt.plot(saccade_df['y_interpolated'], color='g', alpha=0.8)
+	plt.plot(saccade_df['x_interpolated'], color='b', alpha=0.8)
+	plt.plot(saccade_df['y_interpolated'], color='r', alpha=0.8)
 	for t in candidate_t:
-	    plt.axvline(t, 0, 1, color='r')
+	    plt.axvline(t, 0, 1, color='k')
 	fig.suptitle('subject%s %s Analysis 1: Saccades Detected'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
@@ -305,7 +328,7 @@ for image in postDenoise_imageList:
 	# Create Plotsplt.suptitle('subject%s %s'%(subject_number, image))
 	os.makedirs('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}'.format(subject_number), exist_ok = True)
 	print ("creating saccade plot for {}".format(image))
-	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_5.saccade.png'.format(subject_number, subject_number, image))
+	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_4.saccade.png'.format(subject_number, subject_number, image))
 	
 	#--------------------Detect Fixations--------------------
 
