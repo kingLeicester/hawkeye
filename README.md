@@ -4,14 +4,14 @@ The repository contains a Python module (hawkeye.py) for processing, quality ass
 
 Usage: 
 
-Before executing programs, ALWWAYS check & resupply:
-	- coordinate_limits
-	- sample_limits
-	- median_width_max
-	- max_blink_sec
-	- minimum_fixation_duration
-	- maximum_gap_duration
-	- check filepaths 
+Before executing programs, ALWAYS check & resupply:
+- coordinate_limits
+- sample_limits
+- median_width_max
+- max_blink_sec
+- minimum_fixation_duration
+- maximum_gap_duration
+- check filepaths 
 
 0. Source dependancies.sh
 	- directs to an approporiate Python3 enviornmenet 
@@ -30,13 +30,14 @@ Before executing programs, ALWWAYS check & resupply:
 	- computes the grid information of each AOI (rectangle and/or ellipse)
 	- compiles:
 		
-		-a. Initial fixation time on an AOI
-		-b. Fixation duration of initial fixation on an AOI
-		-c1. Total fixation duration on an AOI
-		-c2. Total fixation duration out of an AOI
-		-d. Number of fixations before fixating on an AOI
-		-e. percent valid data per subject
-		-f. ratio of original:missing:interpolated data for each stimuli
+	-a. Initial fixation time on an AOI
+	-b. Fixation duration of initial fixation on an AOI
+	-c1. Total fixation duration on an AOI
+	-c2. Total fixation duration out of an AOI
+	-d. Number of fixations before fixating on an AOI
+	-e. percent valid data per subject
+	-f. ratio of original:missing:interpolated data for each stimuli
+
 	- produces separate datafiles(.csv) for (a-d) and (e,f)
 
 
