@@ -372,6 +372,7 @@ for image in postDenoise_imageList:
 
 	# Create dataFrame of Rectangle AOIs
 	single_rectangle_aoi_df = rectangle_aoi_data.loc[rectangle_aoi_data['image'] == image]
+	single_rectangle_aoi_df['subject_number']=subject_number
 
 	# print last 4 columns (coordinates)
 	rectangle_coordinates = single_rectangle_aoi_df[single_rectangle_aoi_df.columns[-4:]]
@@ -379,7 +380,7 @@ for image in postDenoise_imageList:
 	#rectangle_aoi_subject_list.append(subject_number)
 	#rectangle_aoi_list.append(single_rectangle_aoi_df)
 	#rectangle_aoi_iaps_list.append(image)
-	single_rectangle_aoi_df .to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_rectangle_aoi_.csv".format(subject_number, subject_number, image), index=False)
+	single_rectangle_aoi_df.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_rectangle_aoi_.csv".format(subject_number, subject_number, image), index=False)
 
 
 	if single_rectangle_aoi_df.empty:
@@ -541,6 +542,7 @@ for image in postDenoise_imageList:
 
 	### For Ellipse AOIs
 	single_ellipse_aoi_df = ellipse_aoi_data.loc[ellipse_aoi_data['image'] == image]
+	single_ellipse_aoi_df['subject_number']=subject_number
 
 	# print last 4 columns (coordinates)
 	ellipse_coordinates = single_ellipse_aoi_df[single_ellipse_aoi_df.columns[-4:]]
