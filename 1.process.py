@@ -293,7 +293,7 @@ for image in postDenoise_imageList:
 	plt.plot(interpolated_df['x_interpolated'], color='b', alpha=0.8)
 	plt.plot(interpolated_df['deblinked_y_offset_column'], color='m', alpha=0.5)
 	plt.plot(interpolated_df['y_interpolated'], color='r', alpha=0.8)
-	plt.legend(['interpolated_X', 'interpolated_Y'], loc='upper left')
+	plt.legend(['deblinked_X', 'interpolated_X', 'deblinked_Y', 'interpolated_Y'], loc='upper left')
 	#plt.show()
 	
 	os.makedirs('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}'.format(subject_number), exist_ok = True)
@@ -303,24 +303,54 @@ for image in postDenoise_imageList:
 	#--------------------Detect Saccades--------------------
 	saccade_detector = SaccadeDetector(sample_per_second)
 
-	saccade_df = saccade_detector.detect_saccade(interpolated_df)
-
+	saccade_df, speed_X, speed_Y, speed_combined, peak, threshold = saccade_detector.detect_saccade(interpolated_df)
+	
 	# Get indices that are saccades 
 	candidate_t = (saccade_df[saccade_df['saccade_candidate'] == True]).index
+	number_peaks = candidate_t.size
 
-	# Plot vertical lines at saccades
-	fig = plt.figure(figsize=(14, 4))
-	plt.ylim(coordinate_limits)
-	plt.xlim(sample_limits)
-	plt.xticks(np.arange(0, 500, 25))
-	plt.plot(saccade_df['x_interpolated'], color='b', alpha=0.8)
-	plt.plot(saccade_df['y_interpolated'], color='r', alpha=0.8)
-	for t in candidate_t:
-	    plt.axvline(t, 0, 1, color='k')
-	fig.suptitle('subject%s %s Analysis 1: Saccades Detected'%(subject_number, image))
-	plt.ylabel("Coordinates")
-	plt.xlabel("# Samples")
+	#fig, ax1 = plt.figure(figsize=(14, 4))
+	fig, ax1 = plt.subplots(figsize=(14, 4))
+	color = 'tab:gray'
+	ax1.set_xlabel('Samples #')
+	ax1.set_ylabel('Coordinates', color=color)
+	plt.xticks(np.arange(0, 500, 50))
+	ax1.plot(saccade_df['x_interpolated'], color='b', alpha=0.8)#, linewidth=7.0)
+	ax1.plot(saccade_df['y_interpolated'], color='r', alpha=0.8)#, linewidth=7.0)
 	plt.legend(['X', 'Y'], loc='upper left')
+
+	ax2 = ax1.twinx()
+	color = 'tab:gray'
+	ax2.set_ylabel('Normalized Velocity', color = color)
+	ax2.plot(speed_combined, color='g', alpha=0.3)
+	#ax2.plot(speed_Y , color='c', alpha=0.8)
+	print (threshold)
+	plt.axhline(threshold, 0, 1, color='g', alpha = 0.8)
+	
+	for t in candidate_t:
+		plt.axvline(t, 0, 1, color='k', alpha = 0.3)
+		#plt.text(t, 1, t)
+			
+	fig.suptitle('subject%s %s Analysis 1: Saccades Detected'%(subject_number, image))
+	#plt.ylabel("Coordinates")
+	#plt.xlabel("# Samples")
+	plt.legend(['Velocity', f'Threshold:{round(threshold, 2)}', f'Saccades:{number_peaks}'], loc='upper right')
+	# Plot vertical lines at saccades
+	# fig = plt.figure(figsize=(14, 4))
+	# plt.ylim(coordinate_limits)
+	# plt.xlim(sample_limits)
+	# plt.xticks(np.arange(0, 500, 25)) 
+	# plt.plot(speed_X, color='c', alpha=0.8)
+	# plt.plot(saccade_df['x_interpolated'], color='b', alpha=0.8)
+	# plt.plot(speed_Y , color='m', alpha=0.8)
+	# plt.plot(saccade_df['y_interpolated'], color='r', alpha=0.8)
+	# for t in candidate_t:
+	#     plt.axvline(t, 0, 1, color='k')
+	# fig.suptitle('subject%s %s Analysis 1: Saccades Detected'%(subject_number, image))
+	# plt.ylabel("Coordinates")
+	# plt.xlabel("# Samples")
+	# plt.legend(['speed_X', 'X', 'speed_Y', 'Y'], loc='upper left')
+	# exit()
 	#plt.show()
 
 	#saccade_df.to_csv('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/saccade.csv')
@@ -329,7 +359,7 @@ for image in postDenoise_imageList:
 	os.makedirs('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}'.format(subject_number), exist_ok = True)
 	print ("creating saccade plot for {}".format(image))
 	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_4.saccade.png'.format(subject_number, subject_number, image))
-	
+
 	#--------------------Detect Fixations--------------------
 
 	# Get indices that are not saccades (fixations)

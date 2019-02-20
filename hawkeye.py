@@ -5,7 +5,7 @@ __credits__ = ["David Lee", "Nate Vack"]
 __version__ = "1.0.1"
 __maintainer__ = "David Lee"
 __email__ = "david.s.lee@wisc.edu"
-__status__ = "In Use"
+__status__ = "production"
 
 
 import pandas as pd
@@ -400,6 +400,7 @@ class SaccadeDetector:
 		gaze_array = data_frame[['x_interpolated', 'y_interpolated']].fillna(0).values
 		saccade_detector = nystrom_saccade_detector.AdaptiveDetector(point_array=gaze_array, samples_per_second=self.sampling_rate, threshold_sd_scale=2.5)
 		saccade_detector._compute_saccades()
+		speed_X, speed_Y, speed_combined, peak, threshold = saccade_detector.compute_speed()
 		data_frame['saccade_candidate'] = saccade_detector._candidates
 
 		# Replace saccaded candidates that are missing values with NaN
@@ -407,7 +408,7 @@ class SaccadeDetector:
 
 		final_df = data_frame
 
-		return (final_df)	
+		return (final_df, speed_X, speed_Y, speed_combined, peak, threshold)
 
 	def compute_saccade_interval(self, data_frame: str) -> pd.DataFrame:
 	
@@ -418,7 +419,7 @@ class SaccadeDetector:
 		# Make a list of tuples (saccade intervals)
 		saccade_interval_list = []
 		for saccade_index in saccade_candidate_t:
-			saccade_interval = (saccade_index - 1, saccade_index + 1)
+			saccade_interval = (saccade_index - 2, saccade_index + 2)
 			saccade_interval_list.append(saccade_interval)
 
 		#print (saccade_interval_list)

@@ -171,6 +171,13 @@ total_in_AOI_list = []
 total_out_AOI_list = []
 number_fixations_before_AOI_list = []
 
+rectangle_aoi_subject_list = []
+ellipse_aoi_subject_list = []
+rectangle_aoi_list = []
+ellipse_aoi_list = []
+rectangle_aoi_iaps_list = []
+ellipse_aoi_iaps_list = []
+
 #--------------------Raw vs. Interpolated Data--------------------
 
 
@@ -261,7 +268,7 @@ for image in postDenoise_imageList:
 	saccade_detector = SaccadeDetector(sample_per_second)
 
 	# Create a column with the points when saccades occur
-	saccade_detected_df = saccade_detector.detect_saccade(interpolated_df)
+	saccade_detected_df, speed_X, speed_Y, speed_combined, peak, threshold = saccade_detector.detect_saccade(interpolated_df)
 
 	# Compute total saccade duration
 	saccade_candidate_t = (saccade_detected_df[saccade_detected_df['saccade_candidate'] == True]).index
@@ -367,7 +374,12 @@ for image in postDenoise_imageList:
 	single_rectangle_aoi_df = rectangle_aoi_data.loc[rectangle_aoi_data['image'] == image]
 
 	# print last 4 columns (coordinates)
-	print (single_rectangle_aoi_df[single_rectangle_aoi_df.columns[-4:]])
+	rectangle_coordinates = single_rectangle_aoi_df[single_rectangle_aoi_df.columns[-4:]]
+	print (rectangle_coordinates)
+	#rectangle_aoi_subject_list.append(subject_number)
+	#rectangle_aoi_list.append(single_rectangle_aoi_df)
+	#rectangle_aoi_iaps_list.append(image)
+	single_rectangle_aoi_df .to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_rectangle_aoi_.csv".format(subject_number, subject_number, image), index=False)
 
 
 	if single_rectangle_aoi_df.empty:
@@ -531,7 +543,12 @@ for image in postDenoise_imageList:
 	single_ellipse_aoi_df = ellipse_aoi_data.loc[ellipse_aoi_data['image'] == image]
 
 	# print last 4 columns (coordinates)
-	print (single_ellipse_aoi_df[single_ellipse_aoi_df.columns[-4:]])
+	ellipse_coordinates = single_ellipse_aoi_df[single_ellipse_aoi_df.columns[-4:]]
+	print (ellipse_coordinates)
+	#ellipse_aoi_subject_list.append(subject_number)
+	#ellipse_aoi_list.append(single_ellipse_aoi_df)
+	#ellipse_aoi_iaps_list.append(image)
+	single_ellipse_aoi_df .to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_ellipse_aoi_.csv".format(subject_number, subject_number, image), index=False)
 
 	if single_ellipse_aoi_df.empty:
 		print ('No Ellipse AOI for {}'.format(image))
@@ -711,7 +728,25 @@ for image in postDenoise_imageList:
 	print (len(total_in_AOI_list))
 	print (len(total_out_AOI_list))
 	print (len(number_fixations_before_AOI_list))
+	
+	print (len(rectangle_aoi_list))
+	print (len(ellipse_aoi_list))
+	
 
+
+	# rectangle_aoi_df = pd.DataFrame(
+	# 	{'subject_number':rectangle_aoi_subject_list,
+	# 	'iaps_number': rectangle_aoi_iaps_list,
+	# 	'rectangle_coordinates':rectangle_aoi_list})
+
+	# ellipse_aoi_df = pd.DataFrame(
+	# 	{'subject_number':ellipse_aoi_subject_list,
+	# 	'iaps_number': ellipse_aoi_iaps_list,
+	# 	'ellipse_coordinates':ellipse_aoi_list})
+
+	# rectangle_aoi_df.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_rectangle_aoi_.csv".format(subject_number, subject_number), index=False)
+
+	# ellipse_aoi_df.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_ellipse_aoi_.csv".format(subject_number, subject_number), index=False)
 
 
 	analysis_df = pd.DataFrame(
