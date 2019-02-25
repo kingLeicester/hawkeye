@@ -303,7 +303,7 @@ for image in postDenoise_imageList:
 	#--------------------Detect Saccades--------------------
 	saccade_detector = SaccadeDetector(sample_per_second)
 
-	saccade_df, speed_X, speed_Y, speed_combined, peak, threshold = saccade_detector.detect_saccade(interpolated_df)
+	saccade_df, speed_X, speed_Y, speed_combined, filtered_peaks, threshold = saccade_detector.detect_saccade(interpolated_df)
 	
 	# Get indices that are saccades 
 	candidate_t = (saccade_df[saccade_df['saccade_candidate'] == True]).index
@@ -322,13 +322,14 @@ for image in postDenoise_imageList:
 	ax2 = ax1.twinx()
 	color = 'tab:gray'
 	ax2.set_ylabel('Normalized Velocity', color = color)
-	ax2.plot(speed_combined, color='g', alpha=0.3)
+	ax2.plot(filtered_peaks, linewidth=0.5, color='g', alpha= 1.0)
 	#ax2.plot(speed_Y , color='c', alpha=0.8)
 	print (threshold)
-	plt.axhline(threshold, 0, 1, color='g', alpha = 0.8)
-	
+	plt.axhline(threshold, 0, 1, linewidth=0.5, color='k', alpha = 1.0)
+	plt.axhline(0, 0, 1, linewidth=0.5, color='k', alpha = 1.0)
+
 	for t in candidate_t:
-		plt.axvline(t, 0, 1, color='k', alpha = 0.3)
+		plt.axvline(t, 0, 1, linewidth=1, color='k', alpha = 0.3)
 		#plt.text(t, 1, t)
 			
 	fig.suptitle('subject%s %s Analysis 1: Saccades Detected'%(subject_number, image))

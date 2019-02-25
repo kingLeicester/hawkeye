@@ -380,7 +380,7 @@ for image in postDenoise_imageList:
 	#rectangle_aoi_subject_list.append(subject_number)
 	#rectangle_aoi_list.append(single_rectangle_aoi_df)
 	#rectangle_aoi_iaps_list.append(image)
-	single_rectangle_aoi_df.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_rectangle_aoi_.csv".format(subject_number, subject_number, image), index=False)
+	single_rectangle_aoi_df.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_rectangle_aoi.csv".format(subject_number, subject_number, image), index=False)
 
 
 	if single_rectangle_aoi_df.empty:
@@ -550,7 +550,7 @@ for image in postDenoise_imageList:
 	#ellipse_aoi_subject_list.append(subject_number)
 	#ellipse_aoi_list.append(single_ellipse_aoi_df)
 	#ellipse_aoi_iaps_list.append(image)
-	single_ellipse_aoi_df .to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_ellipse_aoi_.csv".format(subject_number, subject_number, image), index=False)
+	single_ellipse_aoi_df .to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_ellipse_aoi.csv".format(subject_number, subject_number, image), index=False)
 
 	if single_ellipse_aoi_df.empty:
 		print ('No Ellipse AOI for {}'.format(image))
