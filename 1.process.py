@@ -94,6 +94,7 @@ else:
 
 #--------------------Denoising1: Remove 6 Practice Picture, Pause, and Fixation Cross (~1000ms) Trials (Applies Universally)--------------------
 data_merged = gaze_denoisor.denoise_practice_and_pause(data_merged)
+# Comment out to include the fixation cross time
 data_merged = gaze_denoisor.denoise_fixation_cross(data_merged)
 
 ### Total number of smples after Denoising #1
@@ -303,7 +304,7 @@ for image in postDenoise_imageList:
 	#--------------------Detect Saccades--------------------
 	saccade_detector = SaccadeDetector(sample_per_second)
 
-	saccade_df, speed_X, speed_Y, speed_combined, filtered_peaks, threshold = saccade_detector.detect_saccade(interpolated_df)
+	saccade_df, speed_X, speed_Y, speed_combined, filtered_peaks, threshold, speed_original = saccade_detector.detect_saccade(interpolated_df)
 	
 	# Get indices that are saccades 
 	candidate_t = (saccade_df[saccade_df['saccade_candidate'] == True]).index
@@ -311,31 +312,44 @@ for image in postDenoise_imageList:
 
 	#fig, ax1 = plt.figure(figsize=(14, 4))
 	fig, ax1 = plt.subplots(figsize=(14, 4))
+	plt.ylim(coordinate_limits)
 	color = 'tab:gray'
-	ax1.set_xlabel('Samples #')
+	ax1.set_xlabel('Sample #')
 	ax1.set_ylabel('Coordinates', color=color)
-	plt.xticks(np.arange(0, 500, 50))
-	ax1.plot(saccade_df['x_interpolated'], color='b', alpha=0.8)#, linewidth=7.0)
-	ax1.plot(saccade_df['y_interpolated'], color='r', alpha=0.8)#, linewidth=7.0)
+	plt.xticks(np.arange(0, 550, 50))
+	ax1.plot(saccade_df['x_interpolated'], color='b', linewidth=1, alpha=0.8)#, linewidth=7.0)
+	ax1.plot(saccade_df['y_interpolated'], color='r', linewidth=1, alpha=0.8)#, linewidth=7.0)
 	plt.legend(['X', 'Y'], loc='upper left')
+
+	# Place horizontal line at fixation cross location
+	plt.axhline(640, 0, 0.01, linewidth=0.5, color='b', alpha = 0.5)
+	plt.axhline(512, 0, 0.01, linewidth=0.5, color='r', alpha = 0.5)
 
 	ax2 = ax1.twinx()
 	color = 'tab:gray'
+	plt.ylim(0,0.1)
 	ax2.set_ylabel('Normalized Velocity', color = color)
-	ax2.plot(filtered_peaks, linewidth=0.5, color='g', alpha= 1.0)
+	#ax2.plot(speed_combined, linewidth=0.5, color='b', alpha= 1.0)
+	#ax2.plot(speed_Y, linewidth=0.5, color='r', alpha= 1.0)
+	ax2.plot(filtered_peaks, linewidth=0.5, color='g', alpha= 0.5)
+
 	#ax2.plot(speed_Y , color='c', alpha=0.8)
-	print (threshold)
-	plt.axhline(threshold, 0, 1, linewidth=0.5, color='k', alpha = 1.0)
-	plt.axhline(0, 0, 1, linewidth=0.5, color='k', alpha = 1.0)
+	#print (threshold)
+	plt.axhline(threshold, 0, 1, linewidth=1, color='c', alpha = 1.0)
+	#plt.axhline(0, 0, 1, linewidth=0.5, color='k', alpha = 1.0)
+
+	# Place vertical line at picture onset time
+	#plt.axvline(120, 0, 1, linewidth = 3, color='m', alpha = 1.0)
 
 	for t in candidate_t:
-		plt.axvline(t, 0, 1, linewidth=1, color='k', alpha = 0.3)
+		plt.axvline(t, 0, 1, linewidth=1, color='k', alpha = 1.0)
 		#plt.text(t, 1, t)
 			
 	fig.suptitle('subject%s %s Analysis 1: Saccades Detected'%(subject_number, image))
 	#plt.ylabel("Coordinates")
 	#plt.xlabel("# Samples")
-	plt.legend(['Velocity', f'Threshold:{round(threshold, 2)}', f'Saccades:{number_peaks}'], loc='upper right')
+	plt.legend(['Velocity', f'Threshold:{round(threshold, 5)}', f'Saccades:{number_peaks}'], loc='upper right')
+	#plt.legend(['Velocity', f'Threshold:{round(threshold, 5)}', f'Picture Onset', f'Saccades:{number_peaks}'], loc='upper right')
 	# Plot vertical lines at saccades
 	# fig = plt.figure(figsize=(14, 4))
 	# plt.ylim(coordinate_limits)
@@ -360,6 +374,7 @@ for image in postDenoise_imageList:
 	os.makedirs('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}'.format(subject_number), exist_ok = True)
 	print ("creating saccade plot for {}".format(image))
 	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_4.saccade.png'.format(subject_number, subject_number, image))
+
 
 	#--------------------Detect Fixations--------------------
 

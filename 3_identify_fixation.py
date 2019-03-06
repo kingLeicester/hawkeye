@@ -268,7 +268,7 @@ for image in postDenoise_imageList:
 	saccade_detector = SaccadeDetector(sample_per_second)
 
 	# Create a column with the points when saccades occur
-	saccade_detected_df, speed_X, speed_Y, speed_combined, peak, threshold = saccade_detector.detect_saccade(interpolated_df)
+	saccade_detected_df, speed_X, speed_Y, speed_combined, peak, threshold, speed_original = saccade_detector.detect_saccade(interpolated_df)
 
 	# Compute total saccade duration
 	saccade_candidate_t = (saccade_detected_df[saccade_detected_df['saccade_candidate'] == True]).index
