@@ -170,6 +170,7 @@ print ("=====Percent Good Data for subject {}: {}% (Out of 4s picture onset time
 
 #--------------------Raw vs. Interpolated Data--------------------
 for image in postDenoise_imageList:
+#image = 2190
 
 	# Work with data relavant to single IAPS image at a time
 	single_image_df = data_denoised.loc[data_denoised['image'] == image]
@@ -207,7 +208,7 @@ for image in postDenoise_imageList:
 	plt.plot(single_image_df['CursorY'], 'r', alpha=0.8)
 	plt.legend(['raw_X','raw_Y'], loc='upper left')
 	#plt.show()
-	
+
 	os.makedirs('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/'.format(subject_number), exist_ok = True)
 	print ("creating raw data plot for {}".format(image))
 	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_0.raw_data.png'.format(subject_number, subject_number, image))
@@ -238,7 +239,7 @@ for image in postDenoise_imageList:
 	plt.plot(median_filtered_df['y_filtered'], 'r', alpha=0.8)
 	plt.legend(['raw_X', 'filtered_X', 'raw_Y', 'filtered_Y'], loc='upper left')
 	#plt.show()
-	
+
 	os.makedirs('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/'.format(subject_number), exist_ok = True)
 	print ("creating median filtered plot for {}".format(image))
 	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_1.median_filtered.png'.format(subject_number, subject_number, image))
@@ -269,7 +270,7 @@ for image in postDenoise_imageList:
 	plt.plot(deblinked_df['y_deblinked'], color='r', alpha=0.8)
 	plt.legend(['filtered_X', 'deblinked_X', 'filtered_Y', 'deblinked_Y'], loc='upper left')
 	#plt.show()
-	
+
 	os.makedirs('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}'.format(subject_number), exist_ok = True)
 	print ("creating deblinked plot for {}".format(image))
 	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_2.deblinked.png'.format(subject_number, subject_number, image))
@@ -296,16 +297,16 @@ for image in postDenoise_imageList:
 	plt.plot(interpolated_df['y_interpolated'], color='r', alpha=0.8)
 	plt.legend(['deblinked_X', 'interpolated_X', 'deblinked_Y', 'interpolated_Y'], loc='upper left')
 	#plt.show()
-	
+
 	os.makedirs('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}'.format(subject_number), exist_ok = True)
 	print ("creating interpolated plot for {}".format(image))
 	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_3.interpolated.png'.format(subject_number, subject_number, image))
 
 	#--------------------Detect Saccades--------------------
 	saccade_detector = SaccadeDetector(sample_per_second)
-
 	saccade_df, speed_X, speed_Y, speed_combined, filtered_peaks, threshold, speed_original = saccade_detector.detect_saccade(interpolated_df)
-	
+
+
 	# Get indices that are saccades 
 	candidate_t = (saccade_df[saccade_df['saccade_candidate'] == True]).index
 	number_peaks = candidate_t.size
@@ -327,7 +328,7 @@ for image in postDenoise_imageList:
 
 	ax2 = ax1.twinx()
 	color = 'tab:gray'
-	plt.ylim(0,0.1)
+	plt.ylim(0,0.3)
 	ax2.set_ylabel('Normalized Velocity', color = color)
 	#ax2.plot(speed_combined, linewidth=0.5, color='b', alpha= 1.0)
 	#ax2.plot(speed_Y, linewidth=0.5, color='r', alpha= 1.0)
@@ -342,7 +343,7 @@ for image in postDenoise_imageList:
 	#plt.axvline(120, 0, 1, linewidth = 3, color='m', alpha = 1.0)
 
 	for t in candidate_t:
-		plt.axvline(t, 0, 1, linewidth=1, color='k', alpha = 1.0)
+		plt.axvline(t, 0, 1, linewidth=0.5, color='k', alpha = 1.0)
 		#plt.text(t, 1, t)
 			
 	fig.suptitle('subject%s %s Analysis 1: Saccades Detected'%(subject_number, image))

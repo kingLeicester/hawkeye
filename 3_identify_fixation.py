@@ -272,6 +272,7 @@ for image in postDenoise_imageList:
 
 	# Compute total saccade duration
 	saccade_candidate_t = (saccade_detected_df[saccade_detected_df['saccade_candidate'] == True]).index
+
 	total_saccade_duration = len(list(saccade_candidate_t)) * one_sample_time
 
 	# Create a column with saccade intervals
@@ -280,7 +281,6 @@ for image in postDenoise_imageList:
 	saccade_df = saccade_detector.detect_missing_data(saccade_df)
 
 	saccade_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/saccade_data_{image}_{subject_number}.csv")
-
 	#--------------------Valence Data--------------------
 	valence_image_set = set(saccade_df['valence_x'].dropna())
 

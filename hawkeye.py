@@ -398,6 +398,8 @@ class SaccadeDetector:
 
 	def detect_saccade(self, data_frame: str) -> pd.DataFrame:
 		gaze_array = data_frame[['x_interpolated', 'y_interpolated']].fillna(0).values
+		#gaze_array = data_frame[['x_interpolated', 'y_interpolated']].fillna("missing").values
+		#gaze_array = data_frame[['x_interpolated', 'y_interpolated']]
 		saccade_detector = nystrom_saccade_detector.AdaptiveDetector(point_array=gaze_array, samples_per_second=self.sampling_rate, threshold_sd_scale=2.5)
 		saccade_detector._compute_saccades()
 		speed_X, speed_Y, speed_combined, peak, threshold, speed_original = saccade_detector.compute_speed()
