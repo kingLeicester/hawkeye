@@ -95,7 +95,7 @@ else:
 #--------------------Denoising1: Remove 6 Practice Picture, Pause, and Fixation Cross (~1000ms) Trials (Applies Universally)--------------------
 data_merged = gaze_denoisor.denoise_practice_and_pause(data_merged)
 # Comment out to include the fixation cross time
-data_merged = gaze_denoisor.denoise_fixation_cross(data_merged)
+#data_merged = gaze_denoisor.denoise_fixation_cross(data_merged)
 
 ### Total number of smples after Denoising #1
 raw_gaze_count = len(data_merged.index)
@@ -200,7 +200,7 @@ for image in postDenoise_imageList:
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
 	plt.xlim(sample_limits)
-	plt.xticks(np.arange(0, 500, 25))
+	plt.xticks(np.arange(0, 550, 50))
 	fig.suptitle('subject%s %s Raw Data'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
@@ -229,7 +229,7 @@ for image in postDenoise_imageList:
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
 	plt.xlim(sample_limits)
-	plt.xticks(np.arange(0, 500, 25))
+	plt.xticks(np.arange(0, 550, 50))
 	fig.suptitle('subject%s %s Denoise 1: Median Filtered'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
@@ -260,7 +260,7 @@ for image in postDenoise_imageList:
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
 	plt.xlim(sample_limits)
-	plt.xticks(np.arange(0, 500, 25))
+	plt.xticks(np.arange(0, 550, 50))
 	fig.suptitle('subject%s %s Denoise 2: Deblinked'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
@@ -287,7 +287,7 @@ for image in postDenoise_imageList:
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
 	plt.xlim(sample_limits)
-	plt.xticks(np.arange(0, 500, 25))
+	plt.xticks(np.arange(0, 550, 50))
 	fig.suptitle('subject%s %s Denoise 3: Interpolated'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
@@ -318,9 +318,14 @@ for image in postDenoise_imageList:
 	ax1.set_xlabel('Sample #')
 	ax1.set_ylabel('Coordinates', color=color)
 	plt.xticks(np.arange(0, 550, 50))
-	ax1.plot(saccade_df['x_interpolated'], color='b', linewidth=1, alpha=0.8)#, linewidth=7.0)
-	ax1.plot(saccade_df['y_interpolated'], color='r', linewidth=1, alpha=0.8)#, linewidth=7.0)
-	plt.legend(['X', 'Y'], loc='upper left')
+
+	#iloc[0:100].plot()
+	ax1.plot(saccade_df['x_interpolated'][0:120], linestyle='--', color='b', linewidth=1, alpha=0.8)#, linewidth=7.0)
+	ax1.plot(saccade_df['x_interpolated'][120:], color='b', linewidth=1, alpha=0.8)#, linewidth=7.0)
+
+	ax1.plot(saccade_df['y_interpolated'][0:120], linestyle='--', color='r', linewidth=1, alpha=0.8)#, linewidth=7.0)
+	ax1.plot(saccade_df['y_interpolated'][120:], color='r', linewidth=1, alpha=0.8)#, linewidth=7.0)
+	plt.legend(['X_fixation_cross', 'X', 'Y_fixation_cross', 'Y'], loc='upper left')
 
 	# Place horizontal line at fixation cross location
 	plt.axhline(640, 0, 0.01, linewidth=0.5, color='b', alpha = 0.5)
@@ -375,6 +380,8 @@ for image in postDenoise_imageList:
 	os.makedirs('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}'.format(subject_number), exist_ok = True)
 	print ("creating saccade plot for {}".format(image))
 	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_4.saccade.png'.format(subject_number, subject_number, image))
+
+	exit()
 
 
 	#--------------------Detect Fixations--------------------
