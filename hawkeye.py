@@ -603,3 +603,100 @@ class GazeCompiler:
 		df = pd.DataFrame({'ellipse_value':ellipse_point_list})
 		final_df = pd.concat([data_frame, df], axis=1)
 		return (final_df)
+
+class Processor:
+	def __init__(self):
+		pass
+
+	def process(self, subject_number):
+		#--------------------Gaze Data--------------------
+		# Read in gaze data 
+		gaze_reader = GazeReader(subject_number)
+		gaze = gaze_reader.read_gaze_data()
+
+		#gaze.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/MIDUSref_startle_order1_FINAL_VERSION-%s-%s.csv"%(subject_number, subject_number))
+
+		#--------------------E-prime Data--------------------
+		# Convert and read-in Eprime file in to tsv
+		eprime_reader = EPrimeReader(subject_number)
+		e_prime = eprime_reader.read_eprime_data()
+
+		#--------------------Gaze and E-prime Data Merged--------------------
+		data_merged = pd.merge(gaze, e_prime, on='image')
+
+		#--------------------Sampling Rate--------------------
+		gaze_denoisor = GazeDenoisor()
+
+		sample_per_second = gaze_denoisor.compute_sampling_rate(data_merged)
+		print ("-Sampling rate for %s: %s/s"%(subject_number, sample_per_second))
+
+		one_sample_time = round((1/sample_per_second) * 1000, 1)
+		print (f"-One sample time: {one_sample_time}ms")
+
+		#--------------------Interpolation Threshold--------------------
+		# This is the maximum number of conseuctive missing data that will be interpolated. Anything more than 9 trials missing in a row, leave it NaN (do NOT interpolate)
+		if sample_per_second == 120.0:
+			maximum_gap_threshold = 9
+			print (f"-threshold for interpolating: {maximum_gap_threshold} samples")
+		else:
+			#compute new thershold to nearest whole number
+			maximum_gap_threshold = round(maximum_gap_duration/one_sample_time)
+			print (f"-new threshold for interpolating: {maximum_gap_threshold} samples")
+
+		#--------------------Denoising1: Remove 6 Practice Picture, Pause, and Fixation Cross (~1000ms) Trials (Applies Universally)--------------------
+		data_merged = gaze_denoisor.denoise_practice_and_pause(data_merged)
+		# Comment out to include the fixation cross time
+		#data_merged = gaze_denoisor.denoise_fixation_cross(data_merged)
+
+		### Total number of smples after Denoising #1
+		raw_gaze_count = len(data_merged.index)
+		print ("-raw_sample_count: " + str(raw_gaze_count))
+
+		### Total number of stims (IAPS) after Denoising #1
+		raw_image_list = data_merged['image'].unique()
+		raw_stim_count = str(len(raw_image_list))
+		print ("-raw_stim_count: " + raw_stim_count)
+
+		### Figure out indexing before further denoising (later used in constructing plots in all 4000ms)
+		indexLengthDict = {}
+		indexListDict = {}
+		for image in raw_image_list:
+			sample_image = data_merged.loc[data_merged['image'] == image]
+			minIndex = (min(sample_image.index))
+			maxIndex = (max(sample_image.index))
+			indexRange= range(minIndex, maxIndex+1)
+			indexLengthDict[image] = len(indexRange)
+			indexListDict[image] = indexRange
+
+		#--------------------Denoising2: Filter by Validity (Applies Differently by Subject)--------------------
+
+		##### Filter data by validity
+		data_denoised = gaze_denoisor.denoise_invalid(data_merged)
+
+		# Total number of trials after Denoising #2
+		post_denoise_gaze_count = len(data_denoised.index)
+		print ("-post_denoise_sample_count: " + str(post_denoise_gaze_count))
+
+		# Total number of stim count after Denoising #2
+		postDenoise_imageList = data_denoised['image'].unique()
+		postDenoise_stim_count = str(len(postDenoise_imageList))
+		print ("-post_denoise_stim_count: " + postDenoise_stim_count)
+
+		# Figure out which Stim has been removed due to Denoising #2
+		missingIAPSList = list(set(raw_image_list) - set(postDenoise_imageList))
+		print ("-missing_IAPS", missingIAPSList)
+
+		# Compare missingIAPSList to the Original, figure out which Nth element is missing
+		missing_stim_number_list = [] 
+		for index, stim in enumerate(raw_image_list):
+			for missingIAPS in missingIAPSList:
+				if missingIAPS == stim:
+					stim_number = "stim_" + str(index + 1)
+					missing_stim_number_list.append(stim_number)
+		print ("-missing_stim_number", missing_stim_number_list)
+
+		# Total valid data after Denoising #2
+		percent_good_data_subject = round((post_denoise_gaze_count/raw_gaze_count) * 100, 2)
+		print ("=====Percent Good Data for subject {}: {}% (Out of 4s picture onset time)=====".format(subject_number, percent_good_data_subject))
+
+		return (postDenoise_imageList)
