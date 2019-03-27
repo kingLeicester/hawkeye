@@ -17,7 +17,7 @@
 # Recheck AOI coordinate xmin xmax etc
 
 # Nate's Suggestions
-#Offset two series by small y-distance to Compare
+# Offset two series by small y-distance to Compare
 # which workflow works the beest? giant file? or lots of little files - have little physical files and combine htmls for qa purposes
 # how to record okay vs not okay (excel??)
 # whats okay and not okay?
@@ -34,10 +34,6 @@ import matplotlib.pyplot as plt
 import glob
 from scipy import signal
 
-# These are Nate Vack's Work. Should be included in the package with Nate Vack's ownership
-import deblink
-import nystrom_saccade_detector
-
 from hawkeye import GazeReader
 from hawkeye import EPrimeReader
 from hawkeye import GazeDenoisor
@@ -47,125 +43,132 @@ from hawkeye import SignalDenoisor
 from hawkeye import SaccadeDetector
 from hawkeye import FixationDetector
 from hawkeye import GazeCompiler
+from hawkeye import Processor
 
+# These are Nate Vack's Work. Should be included in the package with Nate Vack's ownership
+import deblink
+import nystrom_saccade_detector
 
 subject_number = sys.argv[1]
 
 coordinate_limits = (0, 1280)
-sample_limits = (0, 500)
+sample_limits = (0, 650)
 median_width_max = 1.0 / 20
 max_blink_sec = 0.4
 minimum_fixation_duration = 60
 maximum_gap_duration = 75
 
-#--------------------Gaze Data--------------------
-# Read in gaze data 
-gaze_reader = GazeReader(subject_number)
-gaze = gaze_reader.read_gaze_data()
+processor = Processor()
+postDenoise_imageList, data_denoised, indexListDict, indexLengthDict, sample_per_second, maximum_gap_threshold, percent_good_data_subject, one_sample_time = processor.process(subject_number, maximum_gap_duration)
 
-#gaze.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/MIDUSref_startle_order1_FINAL_VERSION-%s-%s.csv"%(subject_number, subject_number))
+# #--------------------Gaze Data--------------------
+# # Read in gaze data 
+# gaze_reader = GazeReader(subject_number)
+# gaze = gaze_reader.read_gaze_data()
 
-#--------------------E-prime Data--------------------
-# Convert and read-in Eprime file in to tsv
-eprime_reader = EPrimeReader(subject_number)
-e_prime = eprime_reader.read_eprime_data()
+# #gaze.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/MIDUSref_startle_order1_FINAL_VERSION-%s-%s.csv"%(subject_number, subject_number))
 
-#--------------------Gaze and E-prime Data Merged--------------------
-data_merged = pd.merge(gaze, e_prime, on='image')
+# #--------------------E-prime Data--------------------
+# # Convert and read-in Eprime file in to tsv
+# eprime_reader = EPrimeReader(subject_number)
+# e_prime = eprime_reader.read_eprime_data()
 
-#--------------------Sampling Rate--------------------
-gaze_denoisor = GazeDenoisor()
+# #--------------------Gaze and E-prime Data Merged--------------------
+# data_merged = pd.merge(gaze, e_prime, on='image')
 
-sample_per_second = gaze_denoisor.compute_sampling_rate(data_merged)
-print ("-Sampling rate for %s: %s/s"%(subject_number, sample_per_second))
+# #--------------------Sampling Rate--------------------
+# gaze_denoisor = GazeDenoisor()
 
-one_sample_time = round((1/sample_per_second) * 1000, 1)
-print (f"-One sample time: {one_sample_time}ms")
+# sample_per_second = gaze_denoisor.compute_sampling_rate(data_merged)
+# print ("-Sampling rate for %s: %s/s"%(subject_number, sample_per_second))
 
-#--------------------Interpolation Threshold--------------------
-# This is the maximum number of conseuctive missing data that will be interpolated. Anything more than 9 trials missing in a row, leave it NaN (do NOT interpolate)
-if sample_per_second == 120.0:
-	maximum_gap_threshold = 9
-	print (f"-threshold for interpolating: {maximum_gap_threshold} samples")
-else:
-	#compute new thershold to nearest whole number
-	maximum_gap_threshold = round(maximum_gap_duration/one_sample_time)
-	print (f"-new threshold for interpolating: {maximum_gap_threshold} samples")
+# one_sample_time = round((1/sample_per_second) * 1000, 1)
+# print (f"-One sample time: {one_sample_time}ms")
 
-#--------------------Denoising1: Remove 6 Practice Picture, Pause, and Fixation Cross (~1000ms) Trials (Applies Universally)--------------------
-data_merged = gaze_denoisor.denoise_practice_and_pause(data_merged)
-# Comment out to include the fixation cross time
-#data_merged = gaze_denoisor.denoise_fixation_cross(data_merged)
+# #--------------------Interpolation Threshold--------------------
+# # This is the maximum number of conseuctive missing data that will be interpolated. Anything more than 9 trials missing in a row, leave it NaN (do NOT interpolate)
+# if sample_per_second == 120.0:
+# 	maximum_gap_threshold = 9
+# 	print (f"-threshold for interpolating: {maximum_gap_threshold} samples")
+# else:
+# 	#compute new thershold to nearest whole number
+# 	maximum_gap_threshold = round(maximum_gap_duration/one_sample_time)
+# 	print (f"-new threshold for interpolating: {maximum_gap_threshold} samples")
 
-### Total number of smples after Denoising #1
-raw_gaze_count = len(data_merged.index)
-print ("-raw_sample_count: " + str(raw_gaze_count))
+# #--------------------Denoising1: Remove 6 Practice Picture, Pause, and Fixation Cross (~1000ms) Trials (Applies Universally)--------------------
+# data_merged = gaze_denoisor.denoise_practice_and_pause(data_merged)
+# # Comment out to include the fixation cross time
+# #data_merged = gaze_denoisor.denoise_fixation_cross(data_merged)
 
-### Total number of stims (IAPS) after Denoising #1
-raw_image_list = data_merged['image'].unique()
-raw_stim_count = str(len(raw_image_list))
-print ("-raw_stim_count: " + raw_stim_count)
+# ### Total number of smples after Denoising #1
+# raw_gaze_count = len(data_merged.index)
+# print ("-raw_sample_count: " + str(raw_gaze_count))
 
-### Figure out indexing before further denoising (later used in constructing plots in all 4000ms)
-indexLengthDict = {}
-indexListDict = {}
-for image in raw_image_list:
-	sample_image = data_merged.loc[data_merged['image'] == image]
-	minIndex = (min(sample_image.index))
-	maxIndex = (max(sample_image.index))
-	indexRange= range(minIndex, maxIndex+1)
-	indexLengthDict[image] = len(indexRange)
-	indexListDict[image] = indexRange
+# ### Total number of stims (IAPS) after Denoising #1
+# raw_image_list = data_merged['image'].unique()
+# raw_stim_count = str(len(raw_image_list))
+# print ("-raw_stim_count: " + raw_stim_count)
 
-#--------------------Denoising2: Filter by Validity (Applies Differently by Subject)--------------------
+# ### Figure out indexing before further denoising (later used in constructing plots in all 4000ms)
+# indexLengthDict = {}
+# indexListDict = {}
+# for image in raw_image_list:
+# 	sample_image = data_merged.loc[data_merged['image'] == image]
+# 	minIndex = (min(sample_image.index))
+# 	maxIndex = (max(sample_image.index))
+# 	indexRange= range(minIndex, maxIndex+1)
+# 	indexLengthDict[image] = len(indexRange)
+# 	indexListDict[image] = indexRange
 
-##### Filter data by validity
-data_denoised = gaze_denoisor.denoise_invalid(data_merged)
+# #--------------------Denoising2: Filter by Validity (Applies Differently by Subject)--------------------
 
-# Total number of trials after Denoising #2
-post_denoise_gaze_count = len(data_denoised.index)
-print ("-post_denoise_sample_count: " + str(post_denoise_gaze_count))
+# ##### Filter data by validity
+# data_denoised = gaze_denoisor.denoise_invalid(data_merged)
 
-# Total number of stim count after Denoising #2
-postDenoise_imageList = data_denoised['image'].unique()
-postDenoise_stim_count = str(len(postDenoise_imageList))
-print ("-post_denoise_stim_count: " + postDenoise_stim_count)
+# # Total number of trials after Denoising #2
+# post_denoise_gaze_count = len(data_denoised.index)
+# print ("-post_denoise_sample_count: " + str(post_denoise_gaze_count))
 
-# Figure out which Stim has been removed due to Denoising #2
-missingIAPSList = list(set(raw_image_list) - set(postDenoise_imageList))
-print ("-missing_IAPS", missingIAPSList)
+# # Total number of stim count after Denoising #2
+# postDenoise_imageList = data_denoised['image'].unique()
+# postDenoise_stim_count = str(len(postDenoise_imageList))
+# print ("-post_denoise_stim_count: " + postDenoise_stim_count)
 
-# Compare missingIAPSList to the Original, figure out which Nth element is missing
-missing_stim_number_list = [] 
-for index, stim in enumerate(raw_image_list):
-	for missingIAPS in missingIAPSList:
-		if missingIAPS == stim:
-			stim_number = "stim_" + str(index + 1)
-			missing_stim_number_list.append(stim_number)
-print ("-missing_stim_number", missing_stim_number_list)
+# # Figure out which Stim has been removed due to Denoising #2
+# missingIAPSList = list(set(raw_image_list) - set(postDenoise_imageList))
+# print ("-missing_IAPS", missingIAPSList)
 
-# Total valid data after Denoising #2
-percent_good_data_subject = round((post_denoise_gaze_count/raw_gaze_count) * 100, 2)
-print ("=====Percent Good Data for subject {}: {}% (Out of 4s picture onset time)=====".format(subject_number, percent_good_data_subject))
+# # Compare missingIAPSList to the Original, figure out which Nth element is missing
+# missing_stim_number_list = [] 
+# for index, stim in enumerate(raw_image_list):
+# 	for missingIAPS in missingIAPSList:
+# 		if missingIAPS == stim:
+# 			stim_number = "stim_" + str(index + 1)
+# 			missing_stim_number_list.append(stim_number)
+# print ("-missing_stim_number", missing_stim_number_list)
 
-# #--------------------AOI data--------------------
-# aoi_reader = AOIReader()
+# # Total valid data after Denoising #2
+# percent_good_data_subject = round((post_denoise_gaze_count/raw_gaze_count) * 100, 2)
+# print ("=====Percent Good Data for subject {}: {}% (Out of 4s picture onset time)=====".format(subject_number, percent_good_data_subject))
 
-# aoi = aoi_reader.read_in_AOI(data_denoised)
+# # #--------------------AOI data--------------------
+# # aoi_reader = AOIReader()
 
-# rectangle_aoi_df = aoi[(aoi['AOItype'] == 'Rectangle')]
-# rectangle_aoi_df = rectangle_aoi_df.reset_index(drop=True)
+# # aoi = aoi_reader.read_in_AOI(data_denoised)
 
-# ellipse_aoi_df = aoi[(aoi['AOItype'] == 'Ellipse')]
-# ellipse_aoi_df = ellipse_aoi_df.reset_index(drop=True)
+# # rectangle_aoi_df = aoi[(aoi['AOItype'] == 'Rectangle')]
+# # rectangle_aoi_df = rectangle_aoi_df.reset_index(drop=True)
 
-# aoi_scalar = AOIScalar()
+# # ellipse_aoi_df = aoi[(aoi['AOItype'] == 'Ellipse')]
+# # ellipse_aoi_df = ellipse_aoi_df.reset_index(drop=True)
 
-# ### Refine coordinates for Rectangles
-# rectangle_aoi_data = aoi_scalar.scale_rectangle_aoi(rectangle_aoi_df)
+# # aoi_scalar = AOIScalar()
 
-# ### Refine coordinates for Ellipses
-# ellipse_aoi_data = aoi_scalar.scale_ellipse_aoi(ellipse_aoi_df)
+# # ### Refine coordinates for Rectangles
+# # rectangle_aoi_data = aoi_scalar.scale_rectangle_aoi(rectangle_aoi_df)
+
+# # ### Refine coordinates for Ellipses
+# # ellipse_aoi_data = aoi_scalar.scale_ellipse_aoi(ellipse_aoi_df)
 
 
 #--------------------Raw vs. Interpolated Data--------------------
@@ -200,7 +203,7 @@ for image in postDenoise_imageList:
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
 	plt.xlim(sample_limits)
-	plt.xticks(np.arange(0, 550, 50))
+	plt.xticks(np.arange(0, 600, 50))
 	fig.suptitle('subject%s %s Raw Data'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
@@ -229,7 +232,7 @@ for image in postDenoise_imageList:
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
 	plt.xlim(sample_limits)
-	plt.xticks(np.arange(0, 550, 50))
+	plt.xticks(np.arange(0, 600, 50))
 	fig.suptitle('subject%s %s Denoise 1: Median Filtered'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
@@ -260,7 +263,7 @@ for image in postDenoise_imageList:
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
 	plt.xlim(sample_limits)
-	plt.xticks(np.arange(0, 550, 50))
+	plt.xticks(np.arange(0, 600, 50))
 	fig.suptitle('subject%s %s Denoise 2: Deblinked'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
@@ -287,7 +290,7 @@ for image in postDenoise_imageList:
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
 	plt.xlim(sample_limits)
-	plt.xticks(np.arange(0, 550, 50))
+	plt.xticks(np.arange(0, 600, 50))
 	fig.suptitle('subject%s %s Denoise 3: Interpolated'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
@@ -309,7 +312,8 @@ for image in postDenoise_imageList:
 
 	# Get indices that are saccades 
 	candidate_t = (saccade_df[saccade_df['saccade_candidate'] == True]).index
-	number_peaks = candidate_t.size
+
+	number_peaks = len(candidate_t)
 
 	#fig, ax1 = plt.figure(figsize=(14, 4))
 	fig, ax1 = plt.subplots(figsize=(14, 4))
@@ -317,15 +321,16 @@ for image in postDenoise_imageList:
 	color = 'tab:gray'
 	ax1.set_xlabel('Sample #')
 	ax1.set_ylabel('Coordinates', color=color)
-	plt.xticks(np.arange(0, 550, 50))
+	plt.xticks(np.arange(0, 600, 50))
+
 
 	#iloc[0:100].plot()
-	ax1.plot(saccade_df['x_interpolated'][0:120], linestyle='--', color='b', linewidth=1, alpha=0.8)#, linewidth=7.0)
-	ax1.plot(saccade_df['x_interpolated'][120:], color='b', linewidth=1, alpha=0.8)#, linewidth=7.0)
+	#ax1.plot(fixation_included_df['CursorX'][:120], linestyle='--', color='b', linewidth=1, alpha=0.8)#, linewidth=7.0)
+	ax1.plot(saccade_df['x_interpolated'], color='b', linewidth=1, alpha=0.8)#, linewidth=7.0)
 
-	ax1.plot(saccade_df['y_interpolated'][0:120], linestyle='--', color='r', linewidth=1, alpha=0.8)#, linewidth=7.0)
-	ax1.plot(saccade_df['y_interpolated'][120:], color='r', linewidth=1, alpha=0.8)#, linewidth=7.0)
-	plt.legend(['X_fixation_cross', 'X', 'Y_fixation_cross', 'Y'], loc='upper left')
+	#ax1.plot(fixation_included_df['CursorY'][:120], linestyle='--', color='r', linewidth=1, alpha=0.8)#, linewidth=7.0)
+	ax1.plot(saccade_df['y_interpolated'], color='r', linewidth=1, alpha=0.8)#, linewidth=7.0)
+	plt.legend(['X', 'Y'], loc='upper left')
 
 	# Place horizontal line at fixation cross location
 	plt.axhline(640, 0, 0.01, linewidth=0.5, color='b', alpha = 0.5)
@@ -344,13 +349,14 @@ for image in postDenoise_imageList:
 	plt.axhline(threshold, 0, 1, linewidth=1, color='c', alpha = 1.0)
 	#plt.axhline(0, 0, 1, linewidth=0.5, color='k', alpha = 1.0)
 
+	
 	# Place vertical line at picture onset time
 	#plt.axvline(120, 0, 1, linewidth = 3, color='m', alpha = 1.0)
 
 	for t in candidate_t:
 		plt.axvline(t, 0, 1, linewidth=0.5, color='k', alpha = 1.0)
-		#plt.text(t, 1, t)
-			
+
+
 	fig.suptitle('subject%s %s Analysis 1: Saccades Detected'%(subject_number, image))
 	#plt.ylabel("Coordinates")
 	#plt.xlabel("# Samples")
@@ -380,9 +386,6 @@ for image in postDenoise_imageList:
 	os.makedirs('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}'.format(subject_number), exist_ok = True)
 	print ("creating saccade plot for {}".format(image))
 	fig.savefig('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_4.saccade.png'.format(subject_number, subject_number, image))
-
-	exit()
-
 
 	#--------------------Detect Fixations--------------------
 

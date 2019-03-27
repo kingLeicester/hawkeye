@@ -467,6 +467,41 @@ class SaccadeDetector:
 
 		return (data_frame)
 
+	def remove_saccades(self, drop_index_list, candidate_t: list) -> np.ndarray:
+		
+		# created a nested list, each list is a saccade pair that need to be removed
+		def create_index_pair_list(N):
+			index_pair_list = [drop_index_list[n:n+N] for n in range(0, len(drop_index_list), N)]
+			return index_pair_list
+
+		index_pair_list = create_index_pair_list(2)
+
+		print (index_pair_list)
+
+		for pair in index_pair_list:
+			pair[0] = pair[0] - 1
+			pair[1] = pair[1] + 1
+
+		def unlist_nested_list(list):
+			flat_list = [item for pair in list for item in pair]
+			return (flat_list)
+
+		index_list = unlist_nested_list(index_pair_list)
+	
+		# transform np array to list
+		values = candidate_t.values
+		values_list = values.tolist()
+
+		for index in index_list:
+			if index in values_list:
+				values_list.remove(index)
+
+		print (values_list)
+		
+		candidate_t = values_list
+
+		return candidate_t
+
 
 class FixationDetector:
 
@@ -608,7 +643,7 @@ class Processor:
 	def __init__(self):
 		pass
 
-	def process(self, subject_number):
+	def process(self, subject_number, maximum_gap_duration):
 		#--------------------Gaze Data--------------------
 		# Read in gaze data 
 		gaze_reader = GazeReader(subject_number)
@@ -646,7 +681,7 @@ class Processor:
 		#--------------------Denoising1: Remove 6 Practice Picture, Pause, and Fixation Cross (~1000ms) Trials (Applies Universally)--------------------
 		data_merged = gaze_denoisor.denoise_practice_and_pause(data_merged)
 		# Comment out to include the fixation cross time
-		#data_merged = gaze_denoisor.denoise_fixation_cross(data_merged)
+		data_merged = gaze_denoisor.denoise_fixation_cross(data_merged)
 
 		### Total number of smples after Denoising #1
 		raw_gaze_count = len(data_merged.index)
@@ -699,4 +734,4 @@ class Processor:
 		percent_good_data_subject = round((post_denoise_gaze_count/raw_gaze_count) * 100, 2)
 		print ("=====Percent Good Data for subject {}: {}% (Out of 4s picture onset time)=====".format(subject_number, percent_good_data_subject))
 
-		return (postDenoise_imageList)
+		return (postDenoise_imageList, data_denoised, indexListDict, indexLengthDict, sample_per_second, maximum_gap_threshold, percent_good_data_subject, one_sample_time)
