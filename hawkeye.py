@@ -548,10 +548,30 @@ class FixationDetector:
 			end = max(fixations)
 			print (start, end)
 			
-			data_frame.loc[start:end,'final_data_type'] = 'true_fixation'
+			data_frame.loc[start:end,'final_data_type'] = 'fixation'
 			data_frame.loc[(data_frame['saccade_interval'] == "saccade") & (data_frame['final_data_type'] != "saccade"), 'final_data_type'] = "saccade"
+
 		
 		return (data_frame)
+
+	def clean_short_fixations(self, data_frame: str) -> pd.DataFrame:
+		# extract indices that are true_fixations
+		fixation_df = data_frame.loc[data_frame['final_data_type'] == "fixation"]
+		
+		all_fixations_list = self.detect_fixation(fixation_df)
+		total_number_fixations, true_fixation_list = self.detect_true_fixation(all_fixations_list)
+
+		for fixations in true_fixation_list:
+			start = min(fixations)
+			end = max(fixations)
+			print (start, end)
+			
+			data_frame.loc[start:end,'final_data_type'] = 'true_fixation'
+
+		return (data_frame)
+
+
+
 
 	# Takes a nested list of indices (fixations) and returns total duration of all fixations
 	def compute_total_duration_fixation(self, fixation_list):

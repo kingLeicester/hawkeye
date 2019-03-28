@@ -285,7 +285,7 @@ for image in postDenoise_imageList:
 
 	saccade_df = saccade_detector.detect_missing_data(saccade_df)
 
-	saccade_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/{subject_number}_{image}_saccade_data.csv")
+	#saccade_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/{subject_number}_{image}_saccade_data.csv")
 	#--------------------Valence Data--------------------
 	valence_image_set = set(saccade_df['valence_x'].dropna())
 
@@ -334,6 +334,7 @@ for image in postDenoise_imageList:
 
 	# create  dataframe of only true fixations
 	true_fixation_labeld_df = fixation_detector.compute_final_data_type(true_fixation_in_IAPS_list, saccade_df)
+	true_fixation_labeld_df = fixation_detector.clean_short_fixations(true_fixation_labeld_df)
 	true_fixation_labeld_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/{subject_number}_{image}_true_fixation.csv")
 
 	true_fixation_df = true_fixation_labeld_df.loc[true_fixation_labeld_df['final_data_type'] == "true_fixation"]
