@@ -250,9 +250,11 @@ for image in postDenoise_imageList:
 			missing_data_ratio = round((number_missing/total_number_samples) * 100, 2)
 			interpolated_data_ratio = round((number_interpolated/total_number_samples) * 100, 2)
 			original_data_ratio = round((number_original/total_number_samples) * 100, 2)
+			valid_data_ratio = round(((number_original + number_interpolated)/total_number_samples) * 100, 2)
 			print (f"percent missing data :{missing_data_ratio}% ({number_missing}/{total_number_samples})")
 			print (f"percent interpolated data :{interpolated_data_ratio}% ({number_interpolated}/{total_number_samples})")
 			print (f"percent origianl data :{original_data_ratio}% ({number_original}/{total_number_samples})")
+			print (f"percent valid data :{valid_data_ratio}% ({number_original + number_interpolated}/{total_number_samples})")
 			
 			subject_list.append(subject_number)
 			percent_good_data_list.append(percent_good_data_subject)
@@ -269,533 +271,533 @@ for image in postDenoise_imageList:
 	else:
 		print ("number of data does NOT check out, check you math!")
 
-	#--------------------Detect Saccades--------------------
-	saccade_detector = SaccadeDetector(sample_per_second)
+	# #--------------------Detect Saccades--------------------
+	# saccade_detector = SaccadeDetector(sample_per_second)
 
-	# Create a column with the points when saccades occur
-	saccade_detected_df, speed_X, speed_Y, speed_combined, peak, threshold, speed_original = saccade_detector.detect_saccade(interpolated_df)
+	# # Create a column with the points when saccades occur
+	# saccade_detected_df, speed_X, speed_Y, speed_combined, peak, threshold, speed_original = saccade_detector.detect_saccade(interpolated_df)
 
-	# Compute total saccade duration
-	saccade_candidate_t = (saccade_detected_df[saccade_detected_df['saccade_candidate'] == True]).index
+	# # Compute total saccade duration
+	# saccade_candidate_t = (saccade_detected_df[saccade_detected_df['saccade_candidate'] == True]).index
 
-	total_saccade_duration = len(list(saccade_candidate_t)) * one_sample_time
+	# total_saccade_duration = len(list(saccade_candidate_t)) * one_sample_time
 
-	# Create a column with saccade intervals
-	saccade_df = saccade_detector.compute_saccade_interval(saccade_detected_df)
+	# # Create a column with saccade intervals
+	# saccade_df = saccade_detector.compute_saccade_interval(saccade_detected_df)
 
-	saccade_df = saccade_detector.detect_missing_data(saccade_df)
+	# saccade_df = saccade_detector.detect_missing_data(saccade_df)
 
-	#saccade_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/{subject_number}_{image}_saccade_data.csv")
-	#--------------------Valence Data--------------------
-	valence_image_set = set(saccade_df['valence_x'].dropna())
+	# #saccade_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/{subject_number}_{image}_saccade_data.csv")
+	# #--------------------Valence Data--------------------
+	# valence_image_set = set(saccade_df['valence_x'].dropna())
 
-	if len(valence_image_set) == 1:
-		for valence in valence_image_set:
-			valence = valence
+	# if len(valence_image_set) == 1:
+	# 	for valence in valence_image_set:
+	# 		valence = valence
 
-	#--------------------AOI data--------------------
-	aoi_reader = AOIReader()
+	# #--------------------AOI data--------------------
+	# aoi_reader = AOIReader()
 
-	aoi = aoi_reader.read_in_AOI(image)
-
-
-	if aoi.empty:
-		rectangle_aoi_data = aoi
-		ellipse_aoi_data = aoi
-
-	else:
-		rectangle_aoi_df = aoi[(aoi['AOItype'] == 'Rectangle')]
-		rectangle_aoi_df = rectangle_aoi_df.reset_index(drop=True)
-
-		ellipse_aoi_df = aoi[(aoi['AOItype'] == 'Ellipse')]
-		ellipse_aoi_df = ellipse_aoi_df.reset_index(drop=True)
-
-		aoi_scalar = AOIScalar()
-
-		### Refine coordinates for Rectangles
-		rectangle_aoi_data = aoi_scalar.scale_rectangle_aoi(rectangle_aoi_df)
-
-		### Refine coordinates for Ellipses
-		ellipse_aoi_data = aoi_scalar.scale_ellipse_aoi(ellipse_aoi_df)
-
-	#--------------------Detect Fixations--------------------
-	# Create dataFrame of only fixations
-	fixation_df = saccade_df.loc[saccade_df['final_gaze_type'] == "fixation"]
-
-	# --------------------Detect Fixations in IAPS--------------------
-	fixation_detector = FixationDetector(one_sample_time, minimum_fixation_duration, image)
-
-	# list of indices that are consdiered fixations
-	fixation_in_IAPS_list = fixation_detector.detect_fixation(fixation_df)
-
-	# subset to true fixations longer than minimum threshold 60ms
-	total_number_fixations_in_IAPS, true_fixation_in_IAPS_list = fixation_detector.detect_true_fixation(fixation_in_IAPS_list)
+	# aoi = aoi_reader.read_in_AOI(image)
 
 
-	# create  dataframe of only true fixations
-	true_fixation_labeld_df = fixation_detector.compute_final_data_type(true_fixation_in_IAPS_list, saccade_df)
-	true_fixation_labeld_df = fixation_detector.clean_short_fixations(true_fixation_labeld_df)
-	true_fixation_labeld_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/{subject_number}_{image}_true_fixation.csv")
+	# if aoi.empty:
+	# 	rectangle_aoi_data = aoi
+	# 	ellipse_aoi_data = aoi
 
-	true_fixation_df = true_fixation_labeld_df.loc[true_fixation_labeld_df['final_data_type'] == "true_fixation"]
+	# else:
+	# 	rectangle_aoi_df = aoi[(aoi['AOItype'] == 'Rectangle')]
+	# 	rectangle_aoi_df = rectangle_aoi_df.reset_index(drop=True)
 
-	# duration of all fixations
-	total_duration_IAPS = fixation_detector.compute_total_duration_fixation(true_fixation_in_IAPS_list)
+	# 	ellipse_aoi_df = aoi[(aoi['AOItype'] == 'Ellipse')]
+	# 	ellipse_aoi_df = ellipse_aoi_df.reset_index(drop=True)
 
-	# time to first fixation on IAPS
-	if len(true_fixation_in_IAPS_list) >= 1:
-		first_fixation_in_IAPS_index = true_fixation_in_IAPS_list[0]
-		time_at_first_fixation_in_IAPS = round(first_fixation_in_IAPS_index[0] * one_sample_time, 2)
-		first_fixation_in_IAPS_duration = round(len(first_fixation_in_IAPS_index) * one_sample_time, 2)
+	# 	aoi_scalar = AOIScalar()
 
-	else:
-		first_fixation_in_IAPS_index = "N/A"
-		time_at_first_fixation_in_IAPS = "N/A"
-		first_fixation_in_IAPS_duration = "N/A"
+	# 	### Refine coordinates for Rectangles
+	# 	rectangle_aoi_data = aoi_scalar.scale_rectangle_aoi(rectangle_aoi_df)
 
+	# 	### Refine coordinates for Ellipses
+	# 	ellipse_aoi_data = aoi_scalar.scale_ellipse_aoi(ellipse_aoi_df)
 
-	print ("==========Fixation on IAPS=========")
-	print ("first fixating on IAPS at {}ms".format(time_at_first_fixation_in_IAPS))
-	print ("total number of fixations in IAPS {} that last more than 60ms : {}".format(image, total_number_fixations_in_IAPS))
-	print ("total duration of fixations in IAPS {} : {}ms".format(image, total_duration_IAPS))
-	print ("")
+	# #--------------------Detect Fixations--------------------
+	# # Create dataFrame of only fixations
+	# fixation_df = saccade_df.loc[saccade_df['final_gaze_type'] == "fixation"]
 
-	subject_number_list.append(subject_number)
-	valence_list.append(valence)
-	image_number_list.append(image)
-	total_saccade_duration_list.append(total_saccade_duration)
-	aoi_type_list.append("IAPS")
-	object_number_list.append("Object01")
-	time_to_first_fixation_list.append(time_at_first_fixation_in_IAPS)
-	first_fixation_duration_list.append(first_fixation_in_IAPS_duration)
-	number_fixations_list.append(total_number_fixations_in_IAPS)
-	total_in_AOI_list.append(total_duration_IAPS)
-	total_out_AOI_list.append("N/A")
-	number_fixations_before_AOI_list.append("N/A")
+	# # --------------------Detect Fixations in IAPS--------------------
+	# fixation_detector = FixationDetector(one_sample_time, minimum_fixation_duration, image)
 
-	# --------------------Detect Fixations in AOI--------------------
-	gaze_compiler = GazeCompiler()
+	# # list of indices that are consdiered fixations
+	# fixation_in_IAPS_list = fixation_detector.detect_fixation(fixation_df)
 
-	# Create dataFrame of Rectangle AOIs
-	single_rectangle_aoi_df = rectangle_aoi_data.loc[rectangle_aoi_data['image'] == image]
-	single_rectangle_aoi_df['subject_number']=subject_number
-
-	# print last 4 columns (coordinates)
-	rectangle_coordinates = single_rectangle_aoi_df[single_rectangle_aoi_df.columns[-4:]]
-	print (rectangle_coordinates)
-	#rectangle_aoi_subject_list.append(subject_number)
-	#rectangle_aoi_list.append(single_rectangle_aoi_df)
-	#rectangle_aoi_iaps_list.append(image)
-	single_rectangle_aoi_df.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_rectangle_aoi.csv".format(subject_number, subject_number, image), index=False)
+	# # subset to true fixations longer than minimum threshold 60ms
+	# total_number_fixations_in_IAPS, true_fixation_in_IAPS_list = fixation_detector.detect_true_fixation(fixation_in_IAPS_list)
 
 
-	if single_rectangle_aoi_df.empty:
-		print ('No Rectangle AOI for {}'.format(image))
-		print ("")
+	# # create  dataframe of only true fixations
+	# true_fixation_labeld_df = fixation_detector.compute_final_data_type(true_fixation_in_IAPS_list, saccade_df)
+	# true_fixation_labeld_df = fixation_detector.clean_short_fixations(true_fixation_labeld_df)
+	# true_fixation_labeld_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/{subject_number}_{image}_true_fixation.csv")
 
-		# append only the image number
-		subject_number_list.append(subject_number)
-		valence_list.append(valence)
-		image_number_list.append(image)
-		total_saccade_duration_list.append(total_saccade_duration)
-		aoi_type_list.append("N/A")
-		object_number_list.append("N/A")
-		time_to_first_fixation_list.append("N/A")
-		first_fixation_duration_list.append("N/A")
-		number_fixations_list.append("N/A")
-		total_in_AOI_list.append("N/A")
-		total_out_AOI_list.append("N/A")
-		number_fixations_before_AOI_list.append("N/A")
+	# true_fixation_df = true_fixation_labeld_df.loc[true_fixation_labeld_df['final_data_type'] == "true_fixation"]
 
-	else:
-		# Count the rows (how many AOIs for each IAPS?)
-		number_aoi = len(single_rectangle_aoi_df.index)
-		print ("==========Fixation on Rectangle AOI==========")
-		print ("total number of Rectangle AOIs for IAPS {} : {}".format(image, number_aoi))
-		print ("")
+	# # duration of all fixations
+	# total_duration_IAPS = fixation_detector.compute_total_duration_fixation(true_fixation_in_IAPS_list)
 
-		# Start the AOI counter
-		aoi_counter = 0
+	# # time to first fixation on IAPS
+	# if len(true_fixation_in_IAPS_list) >= 1:
+	# 	first_fixation_in_IAPS_index = true_fixation_in_IAPS_list[0]
+	# 	time_at_first_fixation_in_IAPS = round(first_fixation_in_IAPS_index[0] * one_sample_time, 2)
+	# 	first_fixation_in_IAPS_duration = round(len(first_fixation_in_IAPS_index) * one_sample_time, 2)
+
+	# else:
+	# 	first_fixation_in_IAPS_index = "N/A"
+	# 	time_at_first_fixation_in_IAPS = "N/A"
+	# 	first_fixation_in_IAPS_duration = "N/A"
+
+
+	# print ("==========Fixation on IAPS=========")
+	# print ("first fixating on IAPS at {}ms".format(time_at_first_fixation_in_IAPS))
+	# print ("total number of fixations in IAPS {} that last more than 60ms : {}".format(image, total_number_fixations_in_IAPS))
+	# print ("total duration of fixations in IAPS {} : {}ms".format(image, total_duration_IAPS))
+	# print ("")
+
+	# subject_number_list.append(subject_number)
+	# valence_list.append(valence)
+	# image_number_list.append(image)
+	# total_saccade_duration_list.append(total_saccade_duration)
+	# aoi_type_list.append("IAPS")
+	# object_number_list.append("Object01")
+	# time_to_first_fixation_list.append(time_at_first_fixation_in_IAPS)
+	# first_fixation_duration_list.append(first_fixation_in_IAPS_duration)
+	# number_fixations_list.append(total_number_fixations_in_IAPS)
+	# total_in_AOI_list.append(total_duration_IAPS)
+	# total_out_AOI_list.append("N/A")
+	# number_fixations_before_AOI_list.append("N/A")
+
+	# # --------------------Detect Fixations in AOI--------------------
+	# gaze_compiler = GazeCompiler()
+
+	# # Create dataFrame of Rectangle AOIs
+	# single_rectangle_aoi_df = rectangle_aoi_data.loc[rectangle_aoi_data['image'] == image]
+	# single_rectangle_aoi_df['subject_number']=subject_number
+
+	# # print last 4 columns (coordinates)
+	# rectangle_coordinates = single_rectangle_aoi_df[single_rectangle_aoi_df.columns[-4:]]
+	# print (rectangle_coordinates)
+	# #rectangle_aoi_subject_list.append(subject_number)
+	# #rectangle_aoi_list.append(single_rectangle_aoi_df)
+	# #rectangle_aoi_iaps_list.append(image)
+	# single_rectangle_aoi_df.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_rectangle_aoi.csv".format(subject_number, subject_number, image), index=False)
+
+
+	# if single_rectangle_aoi_df.empty:
+	# 	print ('No Rectangle AOI for {}'.format(image))
+	# 	print ("")
+
+	# 	# append only the image number
+	# 	subject_number_list.append(subject_number)
+	# 	valence_list.append(valence)
+	# 	image_number_list.append(image)
+	# 	total_saccade_duration_list.append(total_saccade_duration)
+	# 	aoi_type_list.append("N/A")
+	# 	object_number_list.append("N/A")
+	# 	time_to_first_fixation_list.append("N/A")
+	# 	first_fixation_duration_list.append("N/A")
+	# 	number_fixations_list.append("N/A")
+	# 	total_in_AOI_list.append("N/A")
+	# 	total_out_AOI_list.append("N/A")
+	# 	number_fixations_before_AOI_list.append("N/A")
+
+	# else:
+	# 	# Count the rows (how many AOIs for each IAPS?)
+	# 	number_aoi = len(single_rectangle_aoi_df.index)
+	# 	print ("==========Fixation on Rectangle AOI==========")
+	# 	print ("total number of Rectangle AOIs for IAPS {} : {}".format(image, number_aoi))
+	# 	print ("")
+
+	# 	# Start the AOI counter
+	# 	aoi_counter = 0
 		
-		# Start processing if there truly are more than 1 AOIs
-		if number_aoi >= 1:
-			while aoi_counter < number_aoi:
-				aoi_number = single_rectangle_aoi_df.iloc[aoi_counter]['objectNumber']
-				print ("=====AOI {}====".format(aoi_number))
+	# 	# Start processing if there truly are more than 1 AOIs
+	# 	if number_aoi >= 1:
+	# 		while aoi_counter < number_aoi:
+	# 			aoi_number = single_rectangle_aoi_df.iloc[aoi_counter]['objectNumber']
+	# 			print ("=====AOI {}====".format(aoi_number))
 
-				#Combine fixation data with AOI data
-				#merged = fixation_df.merge(single_rectangle_aoi_df.iloc[[aoi_counter]], how='left').set_index(fixation_df.index)
-				merged = true_fixation_df.merge(single_rectangle_aoi_df.iloc[[aoi_counter]], on=['image'])
+	# 			#Combine fixation data with AOI data
+	# 			#merged = fixation_df.merge(single_rectangle_aoi_df.iloc[[aoi_counter]], how='left').set_index(fixation_df.index)
+	# 			merged = true_fixation_df.merge(single_rectangle_aoi_df.iloc[[aoi_counter]], on=['image'])
 
-				# Clean X,Y gaze and coordinates
-				cleand_fixation_df = gaze_compiler.rectangle_clean_gaze_and_coordinate(merged)
+	# 			# Clean X,Y gaze and coordinates
+	# 			cleand_fixation_df = gaze_compiler.rectangle_clean_gaze_and_coordinate(merged)
 
-				# Compute if a gaze is in the AOI grid or not
-				fixation_in_aoi_df = gaze_compiler.rectangle_compute_gaze_in_AOI(cleand_fixation_df)
+	# 			# Compute if a gaze is in the AOI grid or not
+	# 			fixation_in_aoi_df = gaze_compiler.rectangle_compute_gaze_in_AOI(cleand_fixation_df)
 
-				# sometimes there are no fixations in AOIs
-				if fixation_in_aoi_df.empty:
-					print ('No Fixation for {} {}'.format(image, aoi_number))
-					print ("")
-					subject_number_list.append(subject_number)
-					valence_list.append(valence)
-					image_number_list.append(image)
-					total_saccade_duration_list.append(total_saccade_duration)
-					aoi_type_list.append("rectangle")
-					object_number_list.append(aoi_number)
-					time_to_first_fixation_list.append("N/A")
-					first_fixation_duration_list.append("N/A")
-					number_fixations_list.append("N/A")
-					total_in_AOI_list.append("N/A")
-					total_out_AOI_list.append("N/A")
-					number_fixations_before_AOI_list.append("N/A")
+	# 			# sometimes there are no fixations in AOIs
+	# 			if fixation_in_aoi_df.empty:
+	# 				print ('No Fixation for {} {}'.format(image, aoi_number))
+	# 				print ("")
+	# 				subject_number_list.append(subject_number)
+	# 				valence_list.append(valence)
+	# 				image_number_list.append(image)
+	# 				total_saccade_duration_list.append(total_saccade_duration)
+	# 				aoi_type_list.append("rectangle")
+	# 				object_number_list.append(aoi_number)
+	# 				time_to_first_fixation_list.append("N/A")
+	# 				first_fixation_duration_list.append("N/A")
+	# 				number_fixations_list.append("N/A")
+	# 				total_in_AOI_list.append("N/A")
+	# 				total_out_AOI_list.append("N/A")
+	# 				number_fixations_before_AOI_list.append("N/A")
 
-					aoi_counter += 1
+	# 				aoi_counter += 1
 
-				# if there are at least one fixation in AOIs
-				else:
-					fixation_in_AOI_list = fixation_detector.detect_fixation(fixation_in_aoi_df)
-					total_number_fixations_in_AOI, true_fixation_in_AOI_list = fixation_detector.detect_true_fixation(fixation_in_AOI_list)
-					total_duration_AOI = fixation_detector.compute_total_duration_fixation(true_fixation_in_AOI_list)
+	# 			# if there are at least one fixation in AOIs
+	# 			else:
+	# 				fixation_in_AOI_list = fixation_detector.detect_fixation(fixation_in_aoi_df)
+	# 				total_number_fixations_in_AOI, true_fixation_in_AOI_list = fixation_detector.detect_true_fixation(fixation_in_AOI_list)
+	# 				total_duration_AOI = fixation_detector.compute_total_duration_fixation(true_fixation_in_AOI_list)
 
-					subject_number_list.append(subject_number)
-					valence_list.append(valence)
-					image_number_list.append(image)
-					total_saccade_duration_list.append(total_saccade_duration)
-					aoi_type_list.append("rectangle")
-					object_number_list.append(aoi_number)
-					number_fixations_list.append(total_number_fixations_in_AOI)
+	# 				subject_number_list.append(subject_number)
+	# 				valence_list.append(valence)
+	# 				image_number_list.append(image)
+	# 				total_saccade_duration_list.append(total_saccade_duration)
+	# 				aoi_type_list.append("rectangle")
+	# 				object_number_list.append(aoi_number)
+	# 				number_fixations_list.append(total_number_fixations_in_AOI)
 
-					print ("total number of fixations in Rectangle AOI that last more than 60ms : {}".format(total_number_fixations_in_AOI))
-					print ("total duration of fixations in Rectangle AOI {} : {}ms".format(aoi_number, total_duration_AOI))
-					print ("")
+	# 				print ("total number of fixations in Rectangle AOI that last more than 60ms : {}".format(total_number_fixations_in_AOI))
+	# 				print ("total duration of fixations in Rectangle AOI {} : {}ms".format(aoi_number, total_duration_AOI))
+	# 				print ("")
 
-					if len(true_fixation_in_AOI_list) > 0:
-						first_fixation_index = true_fixation_in_AOI_list[0]
+	# 				if len(true_fixation_in_AOI_list) > 0:
+	# 					first_fixation_index = true_fixation_in_AOI_list[0]
 
-						# Account for when missing data in the beggning?
-						# ====================a.time to first fixation in AOI====================
-						time_at_first_fixation_in_AOI = round(first_fixation_index[0] * one_sample_time, 2)
-						print ("-----a. Initial fixation on AOI at {}ms-----".format(time_at_first_fixation_in_AOI))
+	# 					# Account for when missing data in the beggning?
+	# 					# ====================a.time to first fixation in AOI====================
+	# 					time_at_first_fixation_in_AOI = round(first_fixation_index[0] * one_sample_time, 2)
+	# 					print ("-----a. Initial fixation on AOI at {}ms-----".format(time_at_first_fixation_in_AOI))
 
-						# ====================b.fixation duration of first fixation in AOI====================
-						first_fixation_in_AOI_duration = round(len(first_fixation_index) * one_sample_time, 2)
-						print ("-----b. fixation duration of first fixation in Rectangle AOI: {}ms-----".format(first_fixation_in_AOI_duration))
+	# 					# ====================b.fixation duration of first fixation in AOI====================
+	# 					first_fixation_in_AOI_duration = round(len(first_fixation_index) * one_sample_time, 2)
+	# 					print ("-----b. fixation duration of first fixation in Rectangle AOI: {}ms-----".format(first_fixation_in_AOI_duration))
 					
-						time_to_first_fixation_list.append(time_at_first_fixation_in_AOI)
-						first_fixation_duration_list.append(first_fixation_in_AOI_duration)
+	# 					time_to_first_fixation_list.append(time_at_first_fixation_in_AOI)
+	# 					first_fixation_duration_list.append(first_fixation_in_AOI_duration)
 
-						# ====================c.total time fixating in AOIs compared to elsewhere in the picture====================
-						percent_fixation_in_AOI = round((float(total_duration_AOI)/float(total_duration_IAPS)) * 100, 2)
-						print ("-----c1. total duration of fixations in AOI: {}ms ({}%)-----".format(str(total_duration_AOI), str(percent_fixation_in_AOI)))
+	# 					# ====================c.total time fixating in AOIs compared to elsewhere in the picture====================
+	# 					percent_fixation_in_AOI = round((float(total_duration_AOI)/float(total_duration_IAPS)) * 100, 2)
+	# 					print ("-----c1. total duration of fixations in AOI: {}ms ({}%)-----".format(str(total_duration_AOI), str(percent_fixation_in_AOI)))
 		
-						total_in_AOI_list.append(str(total_duration_AOI))
+	# 					total_in_AOI_list.append(str(total_duration_AOI))
 
-						total_fixation_duration_outside_AOI = round(float(total_duration_IAPS) - float(total_duration_AOI), 2)
-						percent_fixation_out_AOI = round((float(total_fixation_duration_outside_AOI)/float(total_duration_IAPS)) * 100, 2)
-						print ("-----c2. total duration of fixations outside AOI: {}ms({}%)-----".format(str(total_fixation_duration_outside_AOI), str(percent_fixation_out_AOI)))
-						print ("")
+	# 					total_fixation_duration_outside_AOI = round(float(total_duration_IAPS) - float(total_duration_AOI), 2)
+	# 					percent_fixation_out_AOI = round((float(total_fixation_duration_outside_AOI)/float(total_duration_IAPS)) * 100, 2)
+	# 					print ("-----c2. total duration of fixations outside AOI: {}ms({}%)-----".format(str(total_fixation_duration_outside_AOI), str(percent_fixation_out_AOI)))
+	# 					print ("")
 						
-						total_out_AOI_list.append(str(total_fixation_duration_outside_AOI))
+	# 					total_out_AOI_list.append(str(total_fixation_duration_outside_AOI))
 							
-						# ====================d.number of fixations before fixating on AOIs====================
-						if first_fixation_index[0] == 0:
-							print ("{} started fixating on AOI as soon as IAPS was presented".format(subject_number))
-							print ("-----d.number of fixations before fixation on AOI: 0-----")
-							print ("")
-							number_fixations_before_AOI_list.append("0")
+	# 					# ====================d.number of fixations before fixating on AOIs====================
+	# 					if first_fixation_index[0] == 0:
+	# 						print ("{} started fixating on AOI as soon as IAPS was presented".format(subject_number))
+	# 						print ("-----d.number of fixations before fixation on AOI: 0-----")
+	# 						print ("")
+	# 						number_fixations_before_AOI_list.append("0")
 
-						else: 
-							if time_at_first_fixation_in_IAPS == time_at_first_fixation_in_AOI:
-								print ("Initial fixation on IAPS and AOI match, good!")
-								print ("-----d.number of fixations before fixation on AOI: 0-----")
-								print ("")
-								number_fixations_before_AOI_list.append("0")
+	# 					else: 
+	# 						if time_at_first_fixation_in_IAPS == time_at_first_fixation_in_AOI:
+	# 							print ("Initial fixation on IAPS and AOI match, good!")
+	# 							print ("-----d.number of fixations before fixation on AOI: 0-----")
+	# 							print ("")
+	# 							number_fixations_before_AOI_list.append("0")
 
-							elif time_at_first_fixation_in_IAPS > time_at_first_fixation_in_AOI:
-								print ("Initial Fixation on AOI, good!")
-								print ("-----d.number of fixations before fixation on AOI: 0-----")
-								print ("")
-								number_fixations_before_AOI_list.append("0")
+	# 						elif time_at_first_fixation_in_IAPS > time_at_first_fixation_in_AOI:
+	# 							print ("Initial Fixation on AOI, good!")
+	# 							print ("-----d.number of fixations before fixation on AOI: 0-----")
+	# 							print ("")
+	# 							number_fixations_before_AOI_list.append("0")
 
-							elif time_at_first_fixation_in_IAPS < time_at_first_fixation_in_AOI:
-								print ("Initial Fixation on IAPS, compute how many fixations before hitting AOI")
+	# 						elif time_at_first_fixation_in_IAPS < time_at_first_fixation_in_AOI:
+	# 							print ("Initial Fixation on IAPS, compute how many fixations before hitting AOI")
 								
-								# If any of fixations in IAPS occur before first fixating on AOI
-								# They are already filtred for at minimum fixation duration (60ms)
-								fixation_counter = 0
-								for fixation in true_fixation_in_IAPS_list:
-									if max(fixation) < first_fixation_index[0]:
-										fixation_counter += 1
+	# 							# If any of fixations in IAPS occur before first fixating on AOI
+	# 							# They are already filtred for at minimum fixation duration (60ms)
+	# 							fixation_counter = 0
+	# 							for fixation in true_fixation_in_IAPS_list:
+	# 								if max(fixation) < first_fixation_index[0]:
+	# 									fixation_counter += 1
 								
-								number_fixations_before_AOI = fixation_counter
-								number_fixations_before_AOI_list.append(fixation_counter)
-								print ("-----d.number of fixations before fixation on AOI: {}-----".format(number_fixations_before_AOI))
-								print ("")
+	# 							number_fixations_before_AOI = fixation_counter
+	# 							number_fixations_before_AOI_list.append(fixation_counter)
+	# 							print ("-----d.number of fixations before fixation on AOI: {}-----".format(number_fixations_before_AOI))
+	# 							print ("")
 							
 
-					else:
-						print ("no fixation longer than 60ms")
+	# 				else:
+	# 					print ("no fixation longer than 60ms")
 
-						time_to_first_fixation_list.append("N/A")
-						first_fixation_duration_list.append("N/A")
-						total_in_AOI_list.append("N/A")
-						total_out_AOI_list.append("N/A")
-						number_fixations_before_AOI_list.append("N/A")
+	# 					time_to_first_fixation_list.append("N/A")
+	# 					first_fixation_duration_list.append("N/A")
+	# 					total_in_AOI_list.append("N/A")
+	# 					total_out_AOI_list.append("N/A")
+	# 					number_fixations_before_AOI_list.append("N/A")
 
-					aoi_counter += 1
-		print ("")
+	# 				aoi_counter += 1
+	# 	print ("")
 
-	### For Ellipse AOIs
-	single_ellipse_aoi_df = ellipse_aoi_data.loc[ellipse_aoi_data['image'] == image]
-	single_ellipse_aoi_df['subject_number']=subject_number
+	# ### For Ellipse AOIs
+	# single_ellipse_aoi_df = ellipse_aoi_data.loc[ellipse_aoi_data['image'] == image]
+	# single_ellipse_aoi_df['subject_number']=subject_number
 
-	# print last 4 columns (coordinates)
-	ellipse_coordinates = single_ellipse_aoi_df[single_ellipse_aoi_df.columns[-4:]]
-	print (ellipse_coordinates)
-	#ellipse_aoi_subject_list.append(subject_number)
-	#ellipse_aoi_list.append(single_ellipse_aoi_df)
-	#ellipse_aoi_iaps_list.append(image)
-	single_ellipse_aoi_df .to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_ellipse_aoi.csv".format(subject_number, subject_number, image), index=False)
+	# # print last 4 columns (coordinates)
+	# ellipse_coordinates = single_ellipse_aoi_df[single_ellipse_aoi_df.columns[-4:]]
+	# print (ellipse_coordinates)
+	# #ellipse_aoi_subject_list.append(subject_number)
+	# #ellipse_aoi_list.append(single_ellipse_aoi_df)
+	# #ellipse_aoi_iaps_list.append(image)
+	# single_ellipse_aoi_df .to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_{}_ellipse_aoi.csv".format(subject_number, subject_number, image), index=False)
 
-	if single_ellipse_aoi_df.empty:
-		print ('No Ellipse AOI for {}'.format(image))
-		print ("")
+	# if single_ellipse_aoi_df.empty:
+	# 	print ('No Ellipse AOI for {}'.format(image))
+	# 	print ("")
 
-		# append only the image number
-		subject_number_list.append(subject_number)
-		valence_list.append(valence)
-		image_number_list.append(image)
-		total_saccade_duration_list.append(total_saccade_duration)
-		aoi_type_list.append("N/A")
-		object_number_list.append("N/A")
-		time_to_first_fixation_list.append("N/A")
-		first_fixation_duration_list.append("N/A")
-		number_fixations_list.append("N/A")
-		total_in_AOI_list.append("N/A")
-		total_out_AOI_list.append("N/A")
-		number_fixations_before_AOI_list.append("N/A")
+	# 	# append only the image number
+	# 	subject_number_list.append(subject_number)
+	# 	valence_list.append(valence)
+	# 	image_number_list.append(image)
+	# 	total_saccade_duration_list.append(total_saccade_duration)
+	# 	aoi_type_list.append("N/A")
+	# 	object_number_list.append("N/A")
+	# 	time_to_first_fixation_list.append("N/A")
+	# 	first_fixation_duration_list.append("N/A")
+	# 	number_fixations_list.append("N/A")
+	# 	total_in_AOI_list.append("N/A")
+	# 	total_out_AOI_list.append("N/A")
+	# 	number_fixations_before_AOI_list.append("N/A")
 
-	else:
-		# Count the rows (how many AOIs for each IAPS?)
-		number_aoi = len(single_ellipse_aoi_df.index)
-		print ("==========Fixation on Ellipse AOI==========")
-		print ("total number of Ellipse AOIs for IAPS {} : {}".format(image, number_aoi))
-		print ("")
+	# else:
+	# 	# Count the rows (how many AOIs for each IAPS?)
+	# 	number_aoi = len(single_ellipse_aoi_df.index)
+	# 	print ("==========Fixation on Ellipse AOI==========")
+	# 	print ("total number of Ellipse AOIs for IAPS {} : {}".format(image, number_aoi))
+	# 	print ("")
 
-		# Start the AOI counter
-		aoi_counter = 0
+	# 	# Start the AOI counter
+	# 	aoi_counter = 0
 
-		# Start processing if there truly are more than 1 AOIs
-		if number_aoi >= 1:
-			while aoi_counter < number_aoi:
-				aoi_number = single_ellipse_aoi_df.iloc[aoi_counter]['objectNumber']
+	# 	# Start processing if there truly are more than 1 AOIs
+	# 	if number_aoi >= 1:
+	# 		while aoi_counter < number_aoi:
+	# 			aoi_number = single_ellipse_aoi_df.iloc[aoi_counter]['objectNumber']
 
-				print ("=====AOI {}====".format(aoi_number))
+	# 			print ("=====AOI {}====".format(aoi_number))
 
-				#Combine fixation data with AOI data
-				#merged = pd.merge(fixation_df, single_ellipse_aoi_df.iloc[[aoi_counter]], on='image')
-				merged = true_fixation_df.merge(single_ellipse_aoi_df.iloc[[aoi_counter]], on=['image'])#.set_index(fixation_df.index)
+	# 			#Combine fixation data with AOI data
+	# 			#merged = pd.merge(fixation_df, single_ellipse_aoi_df.iloc[[aoi_counter]], on='image')
+	# 			merged = true_fixation_df.merge(single_ellipse_aoi_df.iloc[[aoi_counter]], on=['image'])#.set_index(fixation_df.index)
 
-				# Clean X,Y gaze and coordinates
-				cleaned_fixation_df = gaze_compiler.ellipse_clean_gaze_and_coordinate(merged)
+	# 			# Clean X,Y gaze and coordinates
+	# 			cleaned_fixation_df = gaze_compiler.ellipse_clean_gaze_and_coordinate(merged)
 				
-				#print (row['x_deblinked'], row['y_deblinked'], row['Xcenter'], row['Ycenter'], row['Width'], row['Height'])
-				fixation_in_aoi_df = gaze_compiler.ellipse_compute_gaze_in_AOI(cleaned_fixation_df)
+	# 			#print (row['x_deblinked'], row['y_deblinked'], row['Xcenter'], row['Ycenter'], row['Width'], row['Height'])
+	# 			fixation_in_aoi_df = gaze_compiler.ellipse_compute_gaze_in_AOI(cleaned_fixation_df)
 
 				
-				#print (merged.dtypes)
-				#merged = merged[(merged['x_deblinked'] > merged['Xmin']) & (merged['x_deblinked'] < merged['Xmax']) & (merged['y_deblinked'] > merged['Ymin']) & (merged['y_deblinked'] < merged['Ymax'])]
-				fixation_in_aoi_df = fixation_in_aoi_df[(fixation_in_aoi_df['ellipse_value'] <= 1)]
+	# 			#print (merged.dtypes)
+	# 			#merged = merged[(merged['x_deblinked'] > merged['Xmin']) & (merged['x_deblinked'] < merged['Xmax']) & (merged['y_deblinked'] > merged['Ymin']) & (merged['y_deblinked'] < merged['Ymax'])]
+	# 			fixation_in_aoi_df = fixation_in_aoi_df[(fixation_in_aoi_df['ellipse_value'] <= 1)]
 
-				# sometimes there are no fixations in AOIs
-				if fixation_in_aoi_df.empty:
-					print ('No Fixation for {} {}'.format(image, single_ellipse_aoi_df.iloc[aoi_counter]['objectNumber']))
-					print ("")
-					subject_number_list.append(subject_number)
-					valence_list.append(valence)
-					image_number_list.append(image)
-					total_saccade_duration_list.append(total_saccade_duration)
-					aoi_type_list.append("ellipse")
-					object_number_list.append(single_ellipse_aoi_df.iloc[aoi_counter]['objectNumber'])
-					time_to_first_fixation_list.append("N/A")
-					first_fixation_duration_list.append("N/A")
-					number_fixations_list.append("N/A")
-					total_in_AOI_list.append("N/A")
-					total_out_AOI_list.append("N/A")
-					number_fixations_before_AOI_list.append("N/A")
+	# 			# sometimes there are no fixations in AOIs
+	# 			if fixation_in_aoi_df.empty:
+	# 				print ('No Fixation for {} {}'.format(image, single_ellipse_aoi_df.iloc[aoi_counter]['objectNumber']))
+	# 				print ("")
+	# 				subject_number_list.append(subject_number)
+	# 				valence_list.append(valence)
+	# 				image_number_list.append(image)
+	# 				total_saccade_duration_list.append(total_saccade_duration)
+	# 				aoi_type_list.append("ellipse")
+	# 				object_number_list.append(single_ellipse_aoi_df.iloc[aoi_counter]['objectNumber'])
+	# 				time_to_first_fixation_list.append("N/A")
+	# 				first_fixation_duration_list.append("N/A")
+	# 				number_fixations_list.append("N/A")
+	# 				total_in_AOI_list.append("N/A")
+	# 				total_out_AOI_list.append("N/A")
+	# 				number_fixations_before_AOI_list.append("N/A")
 
-					aoi_counter += 1
+	# 				aoi_counter += 1
 
-				# if there are at least one fixation in AOIs
-				else:
-					fixation_in_AOI_list = fixation_detector.detect_fixation(fixation_in_aoi_df)
-					total_number_fixations_in_AOI, true_fixation_in_AOI_list = fixation_detector.detect_true_fixation(fixation_in_AOI_list)
-					total_duration_AOI = fixation_detector.compute_total_duration_fixation(true_fixation_in_AOI_list)
+	# 			# if there are at least one fixation in AOIs
+	# 			else:
+	# 				fixation_in_AOI_list = fixation_detector.detect_fixation(fixation_in_aoi_df)
+	# 				total_number_fixations_in_AOI, true_fixation_in_AOI_list = fixation_detector.detect_true_fixation(fixation_in_AOI_list)
+	# 				total_duration_AOI = fixation_detector.compute_total_duration_fixation(true_fixation_in_AOI_list)
 
-					subject_number_list.append(subject_number)
-					valence_list.append(valence)
-					image_number_list.append(image)
-					total_saccade_duration_list.append(total_saccade_duration)
-					aoi_type_list.append("ellipse")
-					object_number_list.append(single_ellipse_aoi_df.iloc[aoi_counter]['objectNumber'])
-					number_fixations_list.append(total_number_fixations_in_AOI)
+	# 				subject_number_list.append(subject_number)
+	# 				valence_list.append(valence)
+	# 				image_number_list.append(image)
+	# 				total_saccade_duration_list.append(total_saccade_duration)
+	# 				aoi_type_list.append("ellipse")
+	# 				object_number_list.append(single_ellipse_aoi_df.iloc[aoi_counter]['objectNumber'])
+	# 				number_fixations_list.append(total_number_fixations_in_AOI)
 
-					print ("total number of fixations in Elllipse AOI that last more than 60ms : {}".format(total_number_fixations_in_AOI))
-					print ("total duration of fixations in Elllipse AOI {} : {}ms".format(aoi_number, total_duration_AOI))
-					print ("")
+	# 				print ("total number of fixations in Elllipse AOI that last more than 60ms : {}".format(total_number_fixations_in_AOI))
+	# 				print ("total duration of fixations in Elllipse AOI {} : {}ms".format(aoi_number, total_duration_AOI))
+	# 				print ("")
 
-					if len(true_fixation_in_AOI_list) > 0:
-						first_fixation_index = true_fixation_in_AOI_list[0]
+	# 				if len(true_fixation_in_AOI_list) > 0:
+	# 					first_fixation_index = true_fixation_in_AOI_list[0]
 
-						# Account for when missing data in the beggning?
-						# ====================a.time to first fixation in AOI====================
-						time_at_first_fixation_in_AOI = round(first_fixation_index[0] * one_sample_time, 2)
-						print ("-----a. Initial fixation on AOI at {}ms-----".format(time_at_first_fixation_in_AOI))
+	# 					# Account for when missing data in the beggning?
+	# 					# ====================a.time to first fixation in AOI====================
+	# 					time_at_first_fixation_in_AOI = round(first_fixation_index[0] * one_sample_time, 2)
+	# 					print ("-----a. Initial fixation on AOI at {}ms-----".format(time_at_first_fixation_in_AOI))
 
-						# ====================b.fixation duration of first fixation in AOI====================
-						first_fixation_in_AOI_duration = round(len(first_fixation_index) * one_sample_time, 2)
-						print ("-----b. fixation duration of first fixation in Ellipse AOI: {}ms-----".format(first_fixation_in_AOI_duration))
+	# 					# ====================b.fixation duration of first fixation in AOI====================
+	# 					first_fixation_in_AOI_duration = round(len(first_fixation_index) * one_sample_time, 2)
+	# 					print ("-----b. fixation duration of first fixation in Ellipse AOI: {}ms-----".format(first_fixation_in_AOI_duration))
 					
-						time_to_first_fixation_list.append(time_at_first_fixation_in_AOI)
-						first_fixation_duration_list.append(first_fixation_in_AOI_duration)
+	# 					time_to_first_fixation_list.append(time_at_first_fixation_in_AOI)
+	# 					first_fixation_duration_list.append(first_fixation_in_AOI_duration)
 
-						# ====================c.total time fixating in AOIs compared to elsewhere in the picture====================
-						percent_fixation_in_AOI = round((float(total_duration_AOI)/float(total_duration_IAPS)) * 100, 2)
-						print ("-----c1. total duration of fixations in AOI: {}ms ({}%)-----".format(str(total_duration_AOI), str(percent_fixation_in_AOI)))
+	# 					# ====================c.total time fixating in AOIs compared to elsewhere in the picture====================
+	# 					percent_fixation_in_AOI = round((float(total_duration_AOI)/float(total_duration_IAPS)) * 100, 2)
+	# 					print ("-----c1. total duration of fixations in AOI: {}ms ({}%)-----".format(str(total_duration_AOI), str(percent_fixation_in_AOI)))
 		
-						total_in_AOI_list.append(str(total_duration_AOI))
+	# 					total_in_AOI_list.append(str(total_duration_AOI))
 
-						total_fixation_duration_outside_AOI = round(float(total_duration_IAPS) - float(total_duration_AOI), 2)
-						percent_fixation_out_AOI = round((float(total_fixation_duration_outside_AOI)/float(total_duration_IAPS)) * 100, 2)
-						print ("-----c2. total duration of fixations outside AOI: {}ms({}%)-----".format(str(total_fixation_duration_outside_AOI), str(percent_fixation_out_AOI)))
-						print ("")
+	# 					total_fixation_duration_outside_AOI = round(float(total_duration_IAPS) - float(total_duration_AOI), 2)
+	# 					percent_fixation_out_AOI = round((float(total_fixation_duration_outside_AOI)/float(total_duration_IAPS)) * 100, 2)
+	# 					print ("-----c2. total duration of fixations outside AOI: {}ms({}%)-----".format(str(total_fixation_duration_outside_AOI), str(percent_fixation_out_AOI)))
+	# 					print ("")
 
-						total_out_AOI_list.append(str(total_fixation_duration_outside_AOI))
+	# 					total_out_AOI_list.append(str(total_fixation_duration_outside_AOI))
 
 							
-						# ====================d.number of fixations before fixating on AOIs====================
-						if first_fixation_index[0] == 0:
-							print ("{} started fixating on AOI as soon as IAPS was presented".format(subject_number))
-							print ("-----d.number of fixations before fixation on AOI: 0-----")
-							print ("")
-							number_fixations_before_AOI_list.append("0")
+	# 					# ====================d.number of fixations before fixating on AOIs====================
+	# 					if first_fixation_index[0] == 0:
+	# 						print ("{} started fixating on AOI as soon as IAPS was presented".format(subject_number))
+	# 						print ("-----d.number of fixations before fixation on AOI: 0-----")
+	# 						print ("")
+	# 						number_fixations_before_AOI_list.append("0")
 
-						else: 
-							if time_at_first_fixation_in_IAPS == time_at_first_fixation_in_AOI:
-								print ("Initial fixation on IAPS and AOI match, good!")
-								print ("-----d.number of fixations before fixation on AOI: 0-----")
-								print ("")
-								number_fixations_before_AOI_list.append("0")
+	# 					else: 
+	# 						if time_at_first_fixation_in_IAPS == time_at_first_fixation_in_AOI:
+	# 							print ("Initial fixation on IAPS and AOI match, good!")
+	# 							print ("-----d.number of fixations before fixation on AOI: 0-----")
+	# 							print ("")
+	# 							number_fixations_before_AOI_list.append("0")
 
-							elif time_at_first_fixation_in_IAPS > time_at_first_fixation_in_AOI:
-								print ("Initial Fixation on AOI, good!")
-								print ("-----d.number of fixations before fixation on AOI: 0-----")
-								print ("")
-								number_fixations_before_AOI_list.append("0")
+	# 						elif time_at_first_fixation_in_IAPS > time_at_first_fixation_in_AOI:
+	# 							print ("Initial Fixation on AOI, good!")
+	# 							print ("-----d.number of fixations before fixation on AOI: 0-----")
+	# 							print ("")
+	# 							number_fixations_before_AOI_list.append("0")
 
-							elif time_at_first_fixation_in_IAPS < time_at_first_fixation_in_AOI:
-								print ("Initial Fixation on IAPS, compute how many before hitting AOI")
+	# 						elif time_at_first_fixation_in_IAPS < time_at_first_fixation_in_AOI:
+	# 							print ("Initial Fixation on IAPS, compute how many before hitting AOI")
 
-								# If any of fixations in IAPS occur before first fixating on AOI
-								# They are already filtred for at minimum fixation duration (60ms)
-								fixation_counter = 0
-								for fixation in true_fixation_in_IAPS_list:
-									if max(fixation) < first_fixation_index[0]:
-										fixation_counter += 1
+	# 							# If any of fixations in IAPS occur before first fixating on AOI
+	# 							# They are already filtred for at minimum fixation duration (60ms)
+	# 							fixation_counter = 0
+	# 							for fixation in true_fixation_in_IAPS_list:
+	# 								if max(fixation) < first_fixation_index[0]:
+	# 									fixation_counter += 1
 									
 
-								number_fixations_before_AOI = fixation_counter
-								number_fixations_before_AOI_list.append(fixation_counter)
-								print ("-----d.number of fixations before fixation on AOI: {}-----".format(number_fixations_before_AOI))
-								print ("")
+	# 							number_fixations_before_AOI = fixation_counter
+	# 							number_fixations_before_AOI_list.append(fixation_counter)
+	# 							print ("-----d.number of fixations before fixation on AOI: {}-----".format(number_fixations_before_AOI))
+	# 							print ("")
 
 
-					else:
-						print ("no fixation longer than 60ms")
+	# 				else:
+	# 					print ("no fixation longer than 60ms")
 
-						time_to_first_fixation_list.append("N/A")
-						first_fixation_duration_list.append("N/A")
-						total_in_AOI_list.append("N/A")
-						total_out_AOI_list.append("N/A")
-						number_fixations_before_AOI_list.append("N/A")
+	# 					time_to_first_fixation_list.append("N/A")
+	# 					first_fixation_duration_list.append("N/A")
+	# 					total_in_AOI_list.append("N/A")
+	# 					total_out_AOI_list.append("N/A")
+	# 					number_fixations_before_AOI_list.append("N/A")
 
 
-					aoi_counter += 1
-		print ("")
+	# 				aoi_counter += 1
+	# 	print ("")
 
-	print (len(subject_number_list))
-	print (len(valence_list))
-	print (len(image_number_list))
-	print (len(total_saccade_duration_list))
-	print (len(aoi_type_list))
-	print (len(object_number_list))
-	print (len(time_to_first_fixation_list))
-	print (len(first_fixation_duration_list))
-	print (len(number_fixations_list))
-	print (len(total_in_AOI_list))
-	print (len(total_out_AOI_list))
-	print (len(number_fixations_before_AOI_list))
+	# print (len(subject_number_list))
+	# print (len(valence_list))
+	# print (len(image_number_list))
+	# print (len(total_saccade_duration_list))
+	# print (len(aoi_type_list))
+	# print (len(object_number_list))
+	# print (len(time_to_first_fixation_list))
+	# print (len(first_fixation_duration_list))
+	# print (len(number_fixations_list))
+	# print (len(total_in_AOI_list))
+	# print (len(total_out_AOI_list))
+	# print (len(number_fixations_before_AOI_list))
 	
-	print (len(rectangle_aoi_list))
-	print (len(ellipse_aoi_list))
+	# print (len(rectangle_aoi_list))
+	# print (len(ellipse_aoi_list))
 	
 
 
-	# rectangle_aoi_df = pd.DataFrame(
-	# 	{'subject_number':rectangle_aoi_subject_list,
-	# 	'iaps_number': rectangle_aoi_iaps_list,
-	# 	'rectangle_coordinates':rectangle_aoi_list})
+	# # rectangle_aoi_df = pd.DataFrame(
+	# # 	{'subject_number':rectangle_aoi_subject_list,
+	# # 	'iaps_number': rectangle_aoi_iaps_list,
+	# # 	'rectangle_coordinates':rectangle_aoi_list})
 
-	# ellipse_aoi_df = pd.DataFrame(
-	# 	{'subject_number':ellipse_aoi_subject_list,
-	# 	'iaps_number': ellipse_aoi_iaps_list,
-	# 	'ellipse_coordinates':ellipse_aoi_list})
+	# # ellipse_aoi_df = pd.DataFrame(
+	# # 	{'subject_number':ellipse_aoi_subject_list,
+	# # 	'iaps_number': ellipse_aoi_iaps_list,
+	# # 	'ellipse_coordinates':ellipse_aoi_list})
 
-	# rectangle_aoi_df.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_rectangle_aoi_.csv".format(subject_number, subject_number), index=False)
+	# # rectangle_aoi_df.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_rectangle_aoi_.csv".format(subject_number, subject_number), index=False)
 
-	# ellipse_aoi_df.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_ellipse_aoi_.csv".format(subject_number, subject_number), index=False)
-
-
-	analysis_df = pd.DataFrame(
-		{'subject_number':subject_number_list,
-		'iaps_number':image_number_list,
-		'valence':valence_list,
-		'total_saccade_duration': total_saccade_duration_list,
-		'aoi_type':aoi_type_list,
-		'object_number':object_number_list,
-		'time_to_first_fixation':time_to_first_fixation_list,
-		'first_fixation_duration':first_fixation_duration_list,
-		'number_fixations':number_fixations_list,
-		'total_fixation_duration_in_AOI': total_in_AOI_list,
-		'total_fixation_duration_out_AOI': total_out_AOI_list,
-		'number_fixations_before_AOI': number_fixations_before_AOI_list})
-
-	# Remove unnecessary AOI rows and only keep the ones that actaully exist
-	analysis_df_cleaned = analysis_df[analysis_df.aoi_type != "N/A"]
-
-	#print (analysis_df)
-	analysis_df_cleaned.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_fixation_compiled.csv".format(subject_number, subject_number), index=False)
+	# # ellipse_aoi_df.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_ellipse_aoi_.csv".format(subject_number, subject_number), index=False)
 
 
-	print ("compiling")
+	# analysis_df = pd.DataFrame(
+	# 	{'subject_number':subject_number_list,
+	# 	'iaps_number':image_number_list,
+	# 	'valence':valence_list,
+	# 	'total_saccade_duration': total_saccade_duration_list,
+	# 	'aoi_type':aoi_type_list,
+	# 	'object_number':object_number_list,
+	# 	'time_to_first_fixation':time_to_first_fixation_list,
+	# 	'first_fixation_duration':first_fixation_duration_list,
+	# 	'number_fixations':number_fixations_list,
+	# 	'total_fixation_duration_in_AOI': total_in_AOI_list,
+	# 	'total_fixation_duration_out_AOI': total_out_AOI_list,
+	# 	'number_fixations_before_AOI': number_fixations_before_AOI_list})
 
-	data_type_df = pd.DataFrame(
-		{'subject_number':subject_list,
-		'sampling_rate': sampling_rate_list,
-		'percent_good_data': percent_good_data_list,
-		'iaps_number': iaps_list,
-		'total_samples':total_list,
-		'number_interpolated':number_interpolated_list,
-		'number_original': number_original_list,
-		'number_missing':number_missing_list,
-		'percent_interpolated':ratio_interpolated_list,
-		'percent_original': ratio_original_list,
-		'percent_missing':ratio_missing_list})
+	# # Remove unnecessary AOI rows and only keep the ones that actaully exist
+	# analysis_df_cleaned = analysis_df[analysis_df.aoi_type != "N/A"]
 
-	data_type_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/{subject_number}_data_type_compiled.csv", index=False)
-	# print ("processing for %s complete without error"%(subject_number))
-	# #single_image_df.to_csv("/home/slee/Desktop/eye_sample.csv")
-	# #print (single_image_df)
+	# #print (analysis_df)
+	# analysis_df_cleaned.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_fixation_compiled.csv".format(subject_number, subject_number), index=False)
+
+
+	# print ("compiling")
+
+	# data_type_df = pd.DataFrame(
+	# 	{'subject_number':subject_list,
+	# 	'sampling_rate': sampling_rate_list,
+	# 	'percent_good_data': percent_good_data_list,
+	# 	'iaps_number': iaps_list,
+	# 	'total_samples':total_list,
+	# 	'number_interpolated':number_interpolated_list,
+	# 	'number_original': number_original_list,
+	# 	'number_missing':number_missing_list,
+	# 	'percent_interpolated':ratio_interpolated_list,
+	# 	'percent_original': ratio_original_list,
+	# 	'percent_missing':ratio_missing_list})
+
+	# data_type_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/{subject_number}_data_type_compiled.csv", index=False)
+	# # print ("processing for %s complete without error"%(subject_number))
+	# # #single_image_df.to_csv("/home/slee/Desktop/eye_sample.csv")
+	# # #print (single_image_df)
 
 
