@@ -162,6 +162,7 @@ number_missing_list = []
 ratio_interpolated_list = []
 ratio_original_list = []
 ratio_missing_list = []
+ratio_valid_list = []
 
 subject_number_list = []
 valence_list = []
@@ -267,9 +268,11 @@ for image in postDenoise_imageList:
 			ratio_interpolated_list.append(interpolated_data_ratio)
 			ratio_original_list.append(original_data_ratio)
 			ratio_missing_list.append(missing_data_ratio)
+			ratio_valid_list.append(valid_data_ratio)
 
 	else:
 		print ("number of data does NOT check out, check you math!")
+
 
 	# #--------------------Detect Saccades--------------------
 	# saccade_detector = SaccadeDetector(sample_per_second)
@@ -780,22 +783,23 @@ for image in postDenoise_imageList:
 	# analysis_df_cleaned.to_csv("/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}/{}_fixation_compiled.csv".format(subject_number, subject_number), index=False)
 
 
-	# print ("compiling")
+	print ("compiling")
 
-	# data_type_df = pd.DataFrame(
-	# 	{'subject_number':subject_list,
-	# 	'sampling_rate': sampling_rate_list,
-	# 	'percent_good_data': percent_good_data_list,
-	# 	'iaps_number': iaps_list,
-	# 	'total_samples':total_list,
-	# 	'number_interpolated':number_interpolated_list,
-	# 	'number_original': number_original_list,
-	# 	'number_missing':number_missing_list,
-	# 	'percent_interpolated':ratio_interpolated_list,
-	# 	'percent_original': ratio_original_list,
-	# 	'percent_missing':ratio_missing_list})
+	data_type_df = pd.DataFrame(
+		{'subject_number':subject_list,
+		'sampling_rate': sampling_rate_list,
+		'percent_good_data': percent_good_data_list,
+		'iaps_number': iaps_list,
+		'total_samples':total_list,
+		'number_interpolated':number_interpolated_list,
+		'number_original': number_original_list,
+		'number_missing':number_missing_list,
+		'percent_interpolated':ratio_interpolated_list,
+		'percent_original': ratio_original_list,
+		'percent_missing':ratio_missing_list,
+		'percent_valid':ratio_valid_list})
 
-	# data_type_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/{subject_number}_data_type_compiled.csv", index=False)
+	data_type_df.to_csv(f"/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{subject_number}/{subject_number}_data_type_compiled.csv", index=False)
 	# # print ("processing for %s complete without error"%(subject_number))
 	# # #single_image_df.to_csv("/home/slee/Desktop/eye_sample.csv")
 	# # #print (single_image_df)
