@@ -1,26 +1,9 @@
 #!/usr/bin/env python3
 
-# Notes
-# definately have to merge before applying any filters
-# Q's
-# How to correct for delay - no need I can just use RTTime (E-PRIME CLOCK)
-# Why 6 timestamps, not 5? - don't use "timestamp", use "TETTime"
-# Some missing AOIs - skip them 
-# How to filter by validity? - initaially use tobii validty data and use Nate's deblink fucntion
-# Sampling rate varies by subject - always compute sampling rate in the beggning 
-# Intermediate files - QA plots
-# Filter out Blinks??? - use Nate's deblink function
-# CSV for each subject with total good trials, and good per each IAPS # AND stim in chronological order - completed
-# why NAN's in deblinked data???
-# Re scale AOI to 800 x 600 - done
-# account for ellipse grid computation?
-# Recheck AOI coordinate xmin xmax etc
-
-# Nate's Suggestions
-# Offset two series by small y-distance to Compare
-# which workflow works the beest? giant file? or lots of little files - have little physical files and combine htmls for qa purposes
-# how to record okay vs not okay (excel??)
-# whats okay and not okay?
+### Reminder Notes before Processing
+# MERGE Eprime and Eye-Tracking data before applying any filtering
+# Sampling rate varies by subject (last 28 subjects of MIDSREF has 60 sample/S) - always compute sampling rate in the beggning 
+# Resample AOIs 
 
 import pandas as pd
 import os

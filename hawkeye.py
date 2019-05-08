@@ -570,8 +570,17 @@ class FixationDetector:
 
 		return (data_frame)
 
+	def identify_missing_data(self, data_frame: str) -> pd.DataFrame:
+		# If either of interpolated X or Y data is missing, final gaze type should be "missing"
+		data_frame.loc[(data_frame['x_interpolated'].isnull() | (data_frame['y_interpolated'].isnull())), 'final_data_type'] = "mising"
 
 
+		return (data_frame)
+
+	def fill_missing_image_value(self, image, data_frame: str) -> pd.DataFrame:
+		data_frame.loc[data_frame['image'].isnull(), 'image'] = image
+
+		return (data_frame)
 
 	# Takes a nested list of indices (fixations) and returns total duration of all fixations
 	def compute_total_duration_fixation(self, fixation_list):
