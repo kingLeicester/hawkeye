@@ -476,7 +476,7 @@ class SaccadeDetector:
 
 		index_pair_list = create_index_pair_list(2)
 
-		print (index_pair_list)
+		#print (index_pair_list)
 
 		for pair in index_pair_list:
 			pair[0] = pair[0] - 1
@@ -496,7 +496,7 @@ class SaccadeDetector:
 			if index in values_list:
 				values_list.remove(index)
 
-		print (values_list)
+		#print (values_list)
 		
 		candidate_t = values_list
 
@@ -546,7 +546,7 @@ class FixationDetector:
 		for fixations in true_fixation_list:
 			start = min(fixations)
 			end = max(fixations)
-			print (start, end)
+			#print (start, end)
 			
 			data_frame.loc[start:end,'final_data_type'] = 'fixation'
 			data_frame.loc[(data_frame['saccade_interval'] == "saccade") & (data_frame['final_data_type'] != "saccade"), 'final_data_type'] = "saccade"
@@ -648,7 +648,7 @@ class GazeCompiler:
 			a = row['Width']
 			b = row['Height']
 
-			p = ((math.pow((x - h), 2) // math.pow(a, 2)) + (math.pow((y - k), 2) // math.pow(b, 2))) 
+			p = float(((math.pow((x - h), 2) / math.pow(a, 2)) + (math.pow((y - k), 2) / math.pow(b, 2))))
 
 			# Xcoordinate = row['x_interpolated']
 			# Ycoordinate = row['y_interpolated']
