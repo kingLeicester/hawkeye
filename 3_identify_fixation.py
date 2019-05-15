@@ -15,6 +15,7 @@ from scipy import signal
 from hawkeye import GazeReader
 from hawkeye import EPrimeReader
 from hawkeye import GazeDenoisor
+from hawkeye import ImageDenoisor
 from hawkeye import AOIReader
 from hawkeye import AOIScalar
 from hawkeye import SignalDenoisor
@@ -186,12 +187,20 @@ ellipse_aoi_iaps_list = []
 
 #--------------------Raw vs. Interpolated Data--------------------
 
+# for n, i in enumerate(postDenoise_imageList):
+# 	if i == 2309:
+# 		postDenoise_imageList[n] = 2309
+# 	elif i == 5973:
+# 		postDenoise_imageList[n] = 5972
 
 for image in postDenoise_imageList:
 
-#image = 2830
-# Work with data relavant to single IAPS image at a time
-#image = postDenoise_imageList[4]
+	#image_denoiser = ImageDenoisor()
+	#image = image_denoiser.revert_incorrect_image_number(image)
+
+	#image = 2830
+	# Work with data relavant to single IAPS image at a time
+	#image = postDenoise_imageList[4]
 
 	print (image)
 	single_image_df = data_denoised.loc[data_denoised['image'] == image]
@@ -315,7 +324,7 @@ for image in postDenoise_imageList:
 		rectangle_aoi_data = aoi_scalar.scale_rectangle_aoi(rectangle_aoi_df)
 
 		### Refine coordinates for Ellipses
-		ellipse_aoi_data = aoi_scalar.scale_ellipse_aoi(ellipse_aoi_df)
+		ellipse_aoi_data = aoi_scalar.scale_ellipse_aoi(ellipse_aoi_df, image)
 
 		#--------------------Detect Fixations--------------------
 		# Create dataFrame of only fixations
@@ -551,6 +560,7 @@ for image in postDenoise_imageList:
 
 					aoi_counter += 1
 		print ("")
+	
 
 	### For Ellipse AOIs
 	single_ellipse_aoi_df = ellipse_aoi_data.loc[ellipse_aoi_data['image'] == image]

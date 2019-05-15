@@ -120,6 +120,23 @@ class GazeDenoisor:
 		#data_denoised = data_denoised.drop(data_denoised[(data_denoised.DistanceLeftEye == -1)].index)
 		#data_denoised = data_denoised.drop(data_denoised[(data_denoised.DistanceRightEye == -1)].index)
 
+class ImageDenoisor:
+
+	def __init__(self):
+		pass
+
+	def revert_incorrect_image_number(self, variable):
+			if variable == 2309:
+				variable = 2310
+				
+
+			elif variable == 5973:
+				variable = 5972
+			
+			return (variable)
+				
+			
+
 class AOIReader:
 
 	def __init__(self):
@@ -217,7 +234,7 @@ class AOIScalar:
 
 		return (final_df)
 
-	def scale_ellipse_aoi(self, data_frame):
+	def scale_ellipse_aoi(self, data_frame, image):
 		ellipse_coordinate_list = []
 
 		for index, row in data_frame.iterrows():
@@ -236,6 +253,7 @@ class AOIScalar:
 		# Cast Float to coordinate values
 		ellipse_aoi_data[['Xcenter','Ycenter','Height','Width']] = ellipse_aoi_data[['Xcenter','Ycenter','Height','Width']].astype(float)
 
+
 		# Scale AOI data to align with Tobbi Stimuli
 		# Resample AOI data to 1024 x 1280
 		ellipse_aoi_data['Xcenter'] = (ellipse_aoi_data['Xcenter'] * 1280) / 800
@@ -244,6 +262,17 @@ class AOIScalar:
 		ellipse_aoi_data['Ycenter'] = (600 - ellipse_aoi_data['Ycenter'])
 		ellipse_aoi_data['Ycenter'] = ((ellipse_aoi_data['Ycenter'] * 1024) / 600)
 		ellipse_aoi_data['Height'] = (ellipse_aoi_data['Height'] * 1024) / 600
+
+		# Exception for AOIs that needs manual AOI tweaking
+		# This is the "gold bar" IAPS with weird shaped ellipsoid AOI
+		if image == 8500:
+			#ellipse_aoi_data['Height'] = ellipse_aoi_data['Height'].map({694.6133333:625})
+			ellipse_aoi_data.loc[0,'Height'] = 625
+
+		if image == 1722:
+			ellipse_aoi_data.loc[0,'Height'] = 385
+			ellipse_aoi_data.loc[1,'Height'] = 326
+
 
 		final_df = ellipse_aoi_data
 
@@ -524,6 +553,8 @@ class FixationDetector:
 		return (all_fixations_list)
 
 	def detect_true_fixation(self, fixation_list):
+
+		#print (self.one_sample_time)
 		# Subset fixations that are longer than threshold
 		true_fixation_list = []
 
@@ -724,6 +755,7 @@ class Processor:
 		### Figure out indexing before further denoising (later used in constructing plots in all 4000ms)
 		indexLengthDict = {}
 		indexListDict = {}
+	
 		for image in raw_image_list:
 			sample_image = data_merged.loc[data_merged['image'] == image]
 			minIndex = (min(sample_image.index))
@@ -731,6 +763,19 @@ class Processor:
 			indexRange= range(minIndex, maxIndex+1)
 			indexLengthDict[image] = len(indexRange)
 			indexListDict[image] = indexRange
+
+		# indexLengthDict[2310] = indexLengthDict[2309]
+		# indexLengthDict[5972] = indexLengthDict[5973]
+		# del indexLengthDict[2309]
+		# del indexLengthDict[5973]
+
+		# indexListDict[2310] = indexListDict[2309]
+		# indexListDict[5972] = indexLengthDict[5973]
+		# del indexListDict[2309]
+		# del indexListDict[5973]
+
+		# print (indexLengthDict)
+		# exit()
 
 		#--------------------Denoising2: Filter by Validity (Applies Differently by Subject)--------------------
 
