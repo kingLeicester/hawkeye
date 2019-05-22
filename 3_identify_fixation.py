@@ -431,6 +431,10 @@ for image in postDenoise_imageList:
 		aoi_counter = 0
 
 		# Start processing if there truly are more than 1 AOIs
+
+		#if number_aoi >= 2:
+			#print ("multiple aois")
+
 		if number_aoi >= 1:
 			while aoi_counter < number_aoi:
 				aoi_number = single_rectangle_aoi_df.iloc[aoi_counter]['objectNumber']
