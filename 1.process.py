@@ -35,7 +35,7 @@ import nystrom_saccade_detector
 subject_number = sys.argv[1]
 
 coordinate_limits = (0, 1280)
-sample_limits = (0, 650)
+sample_limits = (0, 500)
 median_width_max = 1.0 / 20
 max_blink_sec = 0.4
 minimum_fixation_duration = 60
@@ -186,7 +186,7 @@ for image in postDenoise_imageList:
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
 	plt.xlim(sample_limits)
-	plt.xticks(np.arange(0, 600, 50))
+	plt.xticks(np.arange(0, 500, 50))
 	fig.suptitle('subject%s %s Raw Data'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
@@ -215,7 +215,7 @@ for image in postDenoise_imageList:
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
 	plt.xlim(sample_limits)
-	plt.xticks(np.arange(0, 600, 50))
+	plt.xticks(np.arange(0, 500, 50))
 	fig.suptitle('subject%s %s Denoise 1: Median Filtered'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
@@ -246,7 +246,7 @@ for image in postDenoise_imageList:
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
 	plt.xlim(sample_limits)
-	plt.xticks(np.arange(0, 600, 50))
+	plt.xticks(np.arange(0, 500, 50))
 	fig.suptitle('subject%s %s Denoise 2: Deblinked'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
@@ -273,15 +273,16 @@ for image in postDenoise_imageList:
 	fig = plt.figure(figsize=(14, 4))
 	plt.ylim(coordinate_limits)
 	plt.xlim(sample_limits)
-	plt.xticks(np.arange(0, 600, 50))
+	plt.xticks(np.arange(0, 500, 50))
 	fig.suptitle('subject%s %s Denoise 3: Interpolated'%(subject_number, image))
 	plt.ylabel("Coordinates")
 	plt.xlabel("# Samples")
-	plt.plot(interpolated_df['deblinked_x_offset_column'], color='c', alpha=0.5)
+	#plt.plot(interpolated_df['deblinked_x_offset_column'], color='c', alpha=0.5)
 	plt.plot(interpolated_df['x_interpolated'], color='b', alpha=0.8)
-	plt.plot(interpolated_df['deblinked_y_offset_column'], color='m', alpha=0.5)
+	#plt.plot(interpolated_df['deblinked_y_offset_column'], color='m', alpha=0.5)
 	plt.plot(interpolated_df['y_interpolated'], color='r', alpha=0.8)
 	plt.legend(['deblinked_X', 'interpolated_X', 'deblinked_Y', 'interpolated_Y'], loc='upper left')
+	plt.legend(['interpolated_X', 'interpolated_Y'], loc='upper left')
 	#plt.show()
 
 	os.makedirs('/study/midusref/DATA/Eyetracking/david_analysis/data_processed/{}'.format(subject_number), exist_ok = True)
